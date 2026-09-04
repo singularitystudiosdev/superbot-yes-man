@@ -197,6 +197,14 @@ body {
   color: var(--fg);
   opacity: 0; will-change: opacity, transform, filter;
 }
+/* the poster card: the reference image's stack — FEEDBACK / ISN'T FOR /
+   EVERYONE., huge and tight */
+.simple.poster {
+  font-size: clamp(48px, 8.5vw, 128px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
 
 /* the end card: PURE black (user ask — was 90% alpha over the blurred wall) */
 .endcard {
@@ -224,6 +232,18 @@ body {
   will-change: transform, opacity, filter;
 }
 .endcard-word em { font-style: normal; color: var(--accent); }
+.endcard-tag {
+  position: absolute; left: 0; top: 0; z-index: 2;
+  font-family: "Arial Rounded MT Bold", ui-rounded, "Nunito", "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(15px, 1.9vw, 26px);
+  letter-spacing: 0.02em;
+  color: #d7d7dc;
+  opacity: 0; white-space: nowrap;
+  will-change: transform, opacity, filter;
+}
+.endcard-tag.italic { font-style: italic; }
+.endcard-tag.long { font-size: clamp(13px, 1.6vw, 21px); }
 
 .veil {
   position: absolute; inset: 0; z-index: 5;

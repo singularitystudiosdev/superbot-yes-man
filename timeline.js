@@ -55,8 +55,20 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 1.45;        // AND YOU LIKE THAT? (1.45s, then the transition)
-const CARDS_END = CARD2_AT + CARD2_LEN;
+const CARD2_AT = CARD1_END, CARD2_LEN = 1.45;        // AND YOU LIKE THAT? (1.45s)
+/* copy variants (?v=… — variants-copy.html compares the four): 'feedback'
+   adds a third poster card (white on black) after AND YOU LIKE THAT?;
+   'pros'/'getreal' tag the superbot.gg wordmark when it arrives */
+const VARIANT = window.VARIANT || Q.get('v') || '';   // pinned by the standalone variant pages, else ?v=
+const CARD3_TEXT = 'FEEDBACK ISN\'T FOR EVERYONE.';
+const CARD3_HTML = 'FEEDBACK<br>ISN\'T FOR<br>EVERYONE.';   // poster stack, like the reference image
+const CARD3_AT = CARD2_AT + CARD2_LEN;
+const CARD3_LEN = 1.9;
+const CARDS_END = VARIANT === 'feedback' ? CARD3_AT + CARD3_LEN : CARD2_AT + CARD2_LEN;
+const TAG_TEXT = VARIANT === 'pros' ? '“for the pros”'
+             : VARIANT === 'getreal' ? 'get real'
+             : VARIANT === 'feedbacktag' ? 'feedback isn\'t for everyone'
+             : '';
 
 /* ---- the card→outro transition: FRAME-level, SaaS-standard scene
    transitions (user ask — no artsy text tricks; the WHOLE card layer leaves
@@ -281,16 +293,15 @@ function renderChat(t) {
 
 let currentCard = null;
 
-function setCard(el, text) {
-  el.textContent = text;
-}
-
 function renderCards(t) {
   const simple = document.getElementById('simple');
   let card = null, since = -1, leaving = false;
   const LEAVE_END = CARDS_END + X.d;
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
+  } else if (VARIANT === 'feedback' && t >= CARD3_AT && t < LEAVE_END) {
+    card = CARD3_TEXT; since = t - CARD3_AT;
+    leaving = t >= CARDS_END;
   } else if (t >= CARD2_AT && t < LEAVE_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
     leaving = t >= CARDS_END;
@@ -301,7 +312,11 @@ function renderCards(t) {
     return;
   }
   currentCard = card;
-  setCard(simple, card);
+  // the feedback card renders as a poster stack (FEEDBACK / ISN'T FOR /
+  // EVERYONE.) — bigger type, one line per beat
+  const poster = card === CARD3_TEXT;
+  simple.classList.toggle('poster', poster);
+  if (poster) simple.innerHTML = CARD3_HTML; else simple.textContent = card;
   if (leaving) {
     // reset every property a frame transition can own, then hand the whole
     // card layer to it — background stays opaque black
@@ -365,6 +380,15 @@ function renderEndcard(t) {
     `translate(${(left + w * scale + LOGO_GAP + 20 * (1 - shift)).toFixed(1)}px, -50%)`;
   if (X.wordFx) X.wordFx(s, word, shift);
 
+  // the tag rides the same drift as the wordmark: same x, one line below it
+  // (24px gap — clears the wordmark's descender room; was 14, overlapped)
+  if (TAG_TEXT) {
+    tag.style.opacity = shift.toFixed(3);
+    tag.style.filter = shift < 1 ? `blur(${(6 * (1 - shift)).toFixed(1)}px)` : 'none';
+    tag.style.transform =
+      `translate(${(left + w * scale + LOGO_GAP + 20 * (1 - shift)).toFixed(1)}px, ${(midY + word.offsetHeight / 2 + 24).toFixed(1)}px)`;
+  }
+
   if (endBot) {
     const laughing = s >= SETTLE && ((s - SETTLE) % LAUGH_PERIOD) < LAUGH_DUR;
     Object.assign(endBot.expr, laughing
@@ -399,6 +423,15 @@ const LOOP_AT = PART_ONLY ? CARD2_AT - 0.35 : 0;     // a beat of pure black, th
 const LOOP_END = PART_ONLY ? OUT_AT + 1.6 : CYCLE;   // hold the arrival briefly, then loop
 
 initChat();
+
+/* the wordmark tag (pros/getreal variants): text set once, revealed with the
+   wordmark's own shift */
+const tag = document.getElementById('endTag');
+if (TAG_TEXT) {
+  tag.textContent = TAG_TEXT;
+  tag.classList.toggle('italic', VARIANT === 'pros');      // quoted line reads as a pull-quote
+  tag.classList.toggle('long', TAG_TEXT.length > 16);      // longer subline sits a step smaller
+} else tag.style.display = 'none';
 
 let t0 = performance.now();
 
