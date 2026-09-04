@@ -110,6 +110,9 @@ body {
 }
 /* the pasted link renders BLUE in the bar and the bubble (user ask) */
 .link { color: #6cb0ff; }
+/* the scene variants paste a short Slides/Gmail URL + question — the sent
+   bubble widens a touch so it all holds one line */
+.scene .msg-user { max-width: 80%; }
 /* the user bubble is BLUE in the real thing (verified on chatgpt.com,
    2026-09-03: the sent message renders as a royal-blue bubble) — the
    bubble rules below pick it up via --gpt-bubble */

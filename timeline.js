@@ -67,7 +67,8 @@ const CARD3_LEN = 1.9;
 const CARDS_END = VARIANT === 'feedback' ? CARD3_AT + CARD3_LEN : CARD2_AT + CARD2_LEN;
 const TAG_TEXT = VARIANT === 'pros' ? '“for the pros”'
              : VARIANT === 'getreal' ? 'get real'
-             : VARIANT === 'feedbacktag' ? 'feedback isn\'t for everyone'
+             : VARIANT === 'feedbacktag' || VARIANT === 'slides' || VARIANT === 'email'
+               ? 'feedback isn\'t for everyone'
              : '';
 
 /* ---- the card→outro transition: FRAME-level, SaaS-standard scene
@@ -150,8 +151,20 @@ const LOGO_GAP = 24;
 const END_LEN = 4.8;
 const CYCLE = OUT_AT + END_LEN + 1.8;
 
-const Q1 = 'Does my website look good?';
-const SITE = 'carbkiller.com';
+/* scene variants (?v=slides|email — slides.html / email.html): the same
+   joke pasting a different artifact — a Google Slides deck, a Gmail thread.
+   Placeholder URLs, kept SHORT so paste + question hold one line in the bar
+   and the bubble; swap for real ones when picked. */
+const SCENES = {
+  slides: { site: 'docs.google.com/presentation/d/1bXq',
+            q: 'Is my presentation good?' },
+  email:  { site: 'mail.google.com/mail/u/0/#inbox/F3kx2q9',
+            q: 'Is this email good?' },
+};
+const SCENE = SCENES[VARIANT];
+const Q1 = SCENE ? SCENE.q : 'Does my website look good?';
+const SITE = SCENE ? SCENE.site : 'carbkiller.com';
+if (SCENE) document.body.classList.add('scene');   // wider sent-bubble cap so the paste + question hold one line
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const easeOutQuint = (p) => 1 - Math.pow(1 - p, 5);
