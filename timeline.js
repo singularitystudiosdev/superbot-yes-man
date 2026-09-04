@@ -55,7 +55,7 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then the transition)
+const CARD2_AT = CARD1_END, CARD2_LEN = 1.45;        // AND YOU LIKE THAT? (1.45s, then the transition)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- the card→outro transition: FRAME-level, SaaS-standard scene
