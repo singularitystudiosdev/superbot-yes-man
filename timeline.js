@@ -1,6 +1,7 @@
 // The pitch, "yes man" — TRUNCATED at AND YOU LIKE THAT?: that card holds
-// 1.1s and the show cuts straight to the superbot.gg end card (mascot +
-// wordmark, laugh cycle — same as the previous animation). Same deterministic
+// 0.9s and the show cuts INSTANTLY to the superbot.gg end card (mascot +
+// wordmark, laugh cycle — same as the previous animation); both cards and
+// the outro sit on PURE black — the chat never flashes through (user ask). Same deterministic
 // seekable anatomy as the "favorite color" spot. The user pastes
 // carbkiller.com (plain text — verified 1:1 against chatgpt.com, 2026-09-03:
 // a link is never a chip), types "Does my website look good?" and hits enter;
@@ -8,7 +9,7 @@
 // llm streams its opener — then a glazing tirade with periodic 😍✨💖 emojis
 // that keeps accelerating and NEVER stops, the wall growing into the hard
 // cut. Cards: "LLMs are made to agree with you" (2.1s) — cut —
-// "AND YOU LIKE THAT?" (1.1s) — straight to the outro.
+// "AND YOU LIKE THAT?" (0.9s) — instant to the outro.
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -49,7 +50,7 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 1.1;         // AND YOU LIKE THAT? (holds, then straight to the outro)
+const CARD2_AT = CARD1_END, CARD2_LEN = 0.9;         // AND YOU LIKE THAT? (0.9s, then INSTANT to the outro)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the superbot.gg end card, straight from the card ---- */
@@ -98,9 +99,6 @@ function initChat() {
   }
 }
 
-/* a card window? (the two punch cards; the chat hides under them) */
-const inCard = (t) => t >= CARD1_AT && t < CARDS_END;
-
 function renderChat(t) {
   const chat = document.getElementById('chatui');
   const head = document.getElementById('gptHead');
@@ -115,7 +113,10 @@ function renderChat(t) {
   const dots = document.getElementById('typingDots');
   const suggestions = document.getElementById('suggestions');
 
-  const live = !inCard(t);
+  // the chat stays visible only before the first card — from the cards
+  // through the outro the background is pure black (fixes the chat flash
+  // that used to read between the card and the outro)
+  const live = t < CARD1_AT;
   chat.style.display = live ? '' : 'none';
   if (!live) return;
 
@@ -199,35 +200,24 @@ function renderChat(t) {
 }
 
 
-/* ---- the punch cards ---- */
-
-/* the second card crossfades into the end card: it holds its 1.1s, then
-   dissolves over CARD2_FADE while the end card fades in beneath it */
-const CARD2_FADE = 0.5;
+/* ---- the punch cards: hard cuts, pure black, instant to the outro ---- */
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
-  let card = null, since = -1, fading = false;
+  let card = null, since = -1;
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
-  } else if (t >= CARD2_AT && t < CARDS_END + CARD2_FADE) {
+  } else if (t >= CARD2_AT && t < CARDS_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
-    fading = t >= CARDS_END;
   }
   if (card === null) {
     simple.style.opacity = '0';
     return;
   }
   simple.textContent = card;
-  simple.style.opacity = fading
-    ? clamp(1 - (t - CARDS_END) / CARD2_FADE, 0, 1).toFixed(3)
-    : easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
-  simple.style.transform = fading
-    ? 'none'
-    : `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
-  simple.style.filter = !fading && since < 0.35
-    ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)`
-    : 'none';
+  simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
+  simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
+  simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
 }
 
 /* ---- the end card (same as the previous animation) ---- */
@@ -243,7 +233,7 @@ function renderEndcard(t) {
   }
   overlay.style.display = '';
   const s = t - END_AT;
-  overlay.style.opacity = easeOutQuint(clamp(s / 0.5, 0, 1)).toFixed(3);
+  overlay.style.opacity = '1';   // INSTANT cut from the card: pure black, no fade
 
   const stage = overlay.getBoundingClientRect();
   const shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
