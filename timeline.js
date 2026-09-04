@@ -111,12 +111,13 @@ const BASE_TRX = {
    default-exporting the same shape). File entries win on name collision. */
 const TRX = { ...BASE_TRX, ...EXTRA_TRX };
 const TRANSITIONS = Object.keys(TRX).map((name) => ({ name, leave: name }));
+const DEFAULT_TR = 'wipe';   // pinned default (user pick)
 const T = (() => {
   const want = Q.get('tr');
-  if (!want) return TRANSITIONS[0];
+  if (!want) return TRX[DEFAULT_TR];
   const byIdx = parseInt(want, 10);
   if (Number.isFinite(byIdx) && TRANSITIONS[byIdx - 1]) return TRANSITIONS[byIdx - 1];
-  return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || TRANSITIONS[0];
+  return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || TRX[DEFAULT_TR];
 })();
 
 /* CLEAN, never a crossfade (user ask): sim transitions tile the two frames
