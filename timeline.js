@@ -1,6 +1,8 @@
 // The pitch, "yes man" — TRUNCATED at AND YOU LIKE THAT?: that card holds
-// 1.15s and the show DISSOLVES smoothly into the superbot.gg end card (mascot +
-// wordmark, laugh cycle — same as the previous animation); both cards and
+// 1.15s and then the transition: the card exits CLEAN — opaque black while
+// the text leaves the frame entirely, a pure-black beat with nothing on
+// screen, and only then the superbot.gg end card arrives (mascot + wordmark,
+// laugh cycle). Nothing overlaps; exit, black, arrival. Both cards and
 // the outro sit on PURE black — the chat never flashes through (user ask). Same deterministic
 // seekable anatomy as the "favorite color" spot. The user pastes
 // carbkiller.com (plain text — verified 1:1 against chatgpt.com, 2026-09-03:
@@ -9,7 +11,7 @@
 // llm streams its opener — then a glazing tirade with periodic 😍✨💖 emojis
 // that keeps accelerating and NEVER stops, the wall growing into the hard
 // cut. Cards: "LLMs are made to agree with you" (2.1s) — cut —
-// "AND YOU LIKE THAT?" (1.15s) — smooth dissolve into the outro.
+// "AND YOU LIKE THAT?" (1.15s) — clean exit to black, beat, outro arrives.
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -57,7 +59,9 @@ const CARDS_END = CARD2_AT + CARD2_LEN;
    (user ask — no two are the same trick with different timing). Pick one
    with ?tr=NAME; variants.html compares them all. Each entry owns how the
    "AND YOU LIKE THAT?" text leaves: d = leave duration, split = needs
-   per-letter spans, mas = how the outro arrives, pre = pure-black beat.
+   per-letter spans, mas = how the outro arrives. The exit runs on OPAQUE
+   black, a global pure-black beat follows (TRANS_BEAT below), and only then
+   the outro arrives — nothing ever overlaps.
    fn(el, L, p, t): el is the card overlay, L the letter spans (when split),
    p the eased 0→1 progress, t the absolute scene time. Deterministic in
    (p, t) — freeze-frames and arrow-stepping land exactly. ---- */
@@ -129,7 +133,7 @@ const LEAVES = {
       s.style.opacity = (1 - q).toFixed(3);
     });
   } },
-  crt: { d: 0.5, pre: 0.1, fn: (el, L, p) => {
+  crt: { d: 0.5, fn: (el, L, p) => {
     if (p < 0.5) {
       el.style.transform = `scaleY(${Math.max(0.02, 1 - p * 2).toFixed(4)})`;
     } else {
@@ -178,7 +182,7 @@ const LEAVES = {
     const k = clamp(100 - 200 * p, 0, 100);
     el.style.clipPath = `polygon(0 0, 100% 0, 100% 0%, ${k}% 100%, 0% ${k}%)`;
   } },
-  curtain: { d: 0.5, pre: 0.18, fn: (el, L, p) => {
+  curtain: { d: 0.5, fn: (el, L, p) => {
     el.style.clipPath = `inset(-2% ${(p * 51).toFixed(2)}% -2% ${(p * 51).toFixed(2)}%)`;
   } },
   blinds: { d: 0.6, split: true, fn: (el, L, p) => {
@@ -200,7 +204,7 @@ const LEAVES = {
   elevator: { d: 0.6, mas: 'wordfirst', fn: (el, L, p) => {
     el.style.transform = `translateY(${(-55 * p * p).toFixed(2)}vh)`;
   } },
-  strobe: { d: 0.6, pre: 0.12, fn: (el, L, p, t) => {
+  strobe: { d: 0.6, fn: (el, L, p, t) => {
     el.style.opacity = p >= 0.85 ? '0' : (hash(Math.floor(t * 18)) > 0.5 ? '1' : '0');
   } },
   outline: { d: 0.7, fn: (el, L, p) => {
@@ -276,7 +280,6 @@ const TRANSITIONS = Object.keys(LEAVES).map((name) => ({
   name,
   leave: name,
   mas: LEAVES[name].mas || 'plain',
-  pre: LEAVES[name].pre || 0,
   d: LEAVES[name].d,
   split: !!LEAVES[name].split,
 }));
@@ -290,7 +293,11 @@ const T = (() => {
 
 /* the outro reveals as the text starts leaving (so the fade reads as a
    crossfade into the mascot); the beat variants hold pure black first */
-const OUT_AT = CARDS_END + T.pre;
+/* the transition is CLEAN (user ask): the card holds opaque black while its
+   text exits, then a pure-black beat with nothing on screen, THEN the outro
+   arrives — the mascot is never visible under the leaving text */
+const TRANS_BEAT = 0.22;
+const OUT_AT = CARDS_END + (T.leave === 'instant' ? 0 : T.d) + TRANS_BEAT;
 
 /* ---- scene 3: the superbot.gg end card, after the transition ---- */
 const DRIFT_AT = 0.7;
@@ -441,7 +448,7 @@ function renderChat(t) {
 
 /* ---- the punch cards: hard cuts, pure black. The second card holds, then
    LEAVES by the selected mechanism (40 in LEAVES above) while the outro
-   shows through the transparent card background beneath it. ---- */
+   card background stays opaque (pure black) so nothing shows beneath. ---- */
 
 let currentCard = null;
 
@@ -482,8 +489,9 @@ function renderCards(t) {
   setCard(simple, card, T.split && leaving);
   if (leaving) {
     // reset every property a leave mechanism can own, then hand the card
-    // to it whole — the outro shows through the transparent card background
-    simple.style.background = 'transparent';
+    // to it whole — the background stays opaque black: a clean exit, the
+    // mascot only arrives after the beat
+    simple.style.background = '';
     simple.style.opacity = '1';
     simple.style.transform = 'none';
     simple.style.filter = 'none';
