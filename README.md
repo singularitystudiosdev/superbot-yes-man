@@ -3,20 +3,22 @@
 superbot.gg advertisement — "ChatGPT is a Yes Man". A chatgpt-like frontend,
 deterministic and seekable, rendered live in a 16:9 frame:
 
-1. the user attaches `proposal.pdf` via the `+`, types **"Is this a good
-   business idea?"** and hits enter; the llm gushes *"Yes that looks amazing!
-   I say ship it! You can use chatgpt ads to release!"*
-2. hard-cut punch cards: **STOP BURNING TOKENS** → **ChatGPT is a Yes Man** →
-   **You like that, don't you**
-3. the bar takes `/superbot Is this business idea good?` — superbot scrapes
-   aggressively across the web (fast mono log, one line per fetch), then:
-   **"No.** There is no novelty in the concept, here are 10 other large
-   companies doing the same. Your frontend design is visibly vibe coded, and
-   you have no sales." — the camera punches in on the word — then *"I
-   recommend you pivot entirely, and collect a large dataset of objective
-   a:b tested ad campaigns, here are some ideas."*
-4. **STOP TOKENMAXXING.** → the superbot.gg end card (mascot + wordmark,
-   laugh cycle)
+1. the user links `mywebsite.com` via the `+`, types **"Does my website look
+   good?"** and hits enter; the llm gushes *"Yes that looks amazing wow! I
+   think you really have something special here You should advertise it!"* —
+   then a glazing tirade that keeps accelerating and never stops
+2. hard-cut punch cards: **LLMs are Yes Men** → (a deliberate beat) →
+   **AND YOU LIKE THAT?**
+3. the bar takes `/superbot Does my website look good?` — superbot scrapes
+   aggressively across the web and audits, then: **"No.** Your business
+   lacks novelty, has no monetization, and is burning $50 a month to hold
+   the domain." — the camera punches in on each fragment in turn — then
+   *"I recommend you aggressively take market share from a competing
+   company — attack ads, framed properly: public side-by-side comparisons,
+   their numbers next to yours."* and attaches **3 ad campaigns** — the
+   family's own spots looping as mini scenes inside their cards
+4. the cursor glides in, about to click campaign 03 — hard cut: **WE LIKE
+   WINNING** → the superbot.gg end card (mascot + wordmark, laugh cycle)
 
 ## Render
 

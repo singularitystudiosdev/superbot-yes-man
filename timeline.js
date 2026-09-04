@@ -1,16 +1,18 @@
 // The pitch, "yes man" — a deterministic seekable render, same anatomy as
-// the "favorite color" spot: a chatgpt-like frontend, the user attaches
-// proposal.pdf via the +, types "Is this a good business idea?" and hits
-// enter; the llm gushes its yes-man answer. Three hard-cut punch cards:
-// STOP BURNING TOKENS → ChatGPT is a Yes Man → You like that, don't you.
-// Then the bar takes "/superbot Is this business idea good?" (the site's
-// cmd-glow chip, ⚡ bolt and breathing glow verbatim) and superbot scrapes
-// aggressively across the web — a fast mono log, one line per fetch —
-// before answering: "No." (the camera punches in on the word, solved
-// origin, same machinery as "Black."), the verdict, ten large companies
-// doing the same, the pivot recommendation, some ideas. Then STOP
-// TOKENMAXXING. and the superbot.gg end card (mascot + wordmark, laugh
-// cycle — same as the previous animation).
+// the "favorite color" spot. The user links mywebsite.com via the +, types
+// "Does my website look good?" and hits enter; the llm streams its opener —
+// then a glazing tirade that keeps accelerating and NEVER stops (the
+// favorite-color tirade machinery), the wall growing into the cut. Cards:
+// "LLMs are Yes Men" — a beat — "AND YOU LIKE THAT?". Then the bar takes
+// "/superbot Does my website look good?" (the site's cmd-glow chip, ⚡ bolt
+// and breathing glow verbatim) and superbot scrapes aggressively, audits,
+// and answers: "No." — the camera punches in, then punches the fragments:
+// "lacks novelty" · "no monetization" · "burning $50 a month" — then the
+// recommendation: take market share with attack ads framed as public
+// side-by-side comparisons — and attaches 3 ad campaigns, mini spots
+// LOOPING inside their cards (the family's own ads, miniaturized). The
+// cursor glides in for the about-to-click beat, hard cut: "WE LIKE
+// WINNING", then the superbot.gg end card (mascot + wordmark, laugh cycle).
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -25,20 +27,34 @@ const SPEED = 1.15;          // the whole show plays ~15% faster (family style)
 
 /* ---- scene 1: the attach, the typing + the send ---- */
 const ATTACH_AT = 0.55, ATTACH_LEN = 0.35;  // the + pulses
-const FILE_AT = 0.9;                        // proposal.pdf pops into the bar
-const TYPE_AT = 1.35, TYPE_DUR = 1.4;       // "Is this a good business idea?"
-const PRESS_AT = 3.15;                      // enter is pressed (no cursor)
-const USER_MSG_AT = 3.25;                   // the user bubble pops into the thread
-const THINK_AT = 3.4, THINK_LEN = 0.8;      // the typing dots
+const LINK_AT = 0.9;                        // mywebsite.com pops into the bar
+const TYPE_AT = 1.4, TYPE_DUR = 1.5;        // "Does my website look good?"
+const PRESS_AT = 3.2;                       // enter is pressed (no cursor yet)
+const USER_MSG_AT = 3.3;                    // the user bubble pops into the thread
+const THINK_AT = 3.45, THINK_LEN = 0.8;     // the typing dots
 
-/* ---- scene 2: the llm's yes-man answer ---- */
-const RESP_AT = 4.3, RESP_DUR = 1.2;
-const REPLY = 'Yes that looks amazing! I say ship it! You can use chatgpt ads to release!';
+/* ---- scene 2: the llm's answer — opener, then the accelerating glaze ---- */
+const RESP_AT = 4.35, RESP_DUR = 1.4;
+const REPLY = 'Yes that looks amazing wow! I think you really have something special here You should advertise it!';
+const GLAZE_AT = RESP_AT + RESP_DUR + 0.3;
+const GLAZE_LEN = 3.5;
+const GLAZE_END = GLAZE_AT + GLAZE_LEN;
+const GLAZE_V0 = 70;                   // chars/s at the start
+const GLAZE_K = 1.0;                   // accelerating e^{kt}
+const GLAZE = " The layout is clean. The palette is confident. The typography is doing exactly what good typography does — disappearing. First impressions matter and yours lands in under a second, which is more than most sites can say. The hero reads instantly. The whitespace alone communicates confidence. Every margin feels intentional — you can feel the grid holding the page together without ever announcing itself. Your type scale is coherent: nothing shouts, everything supports. And it loads fast. That matters more than people admit; every hundred milliseconds is trust, and trust is revenue. The navigation is intuitive — I never once wondered where to look, which is rarer than you would think. Your CTAs are warm and human; most sites sound like a committee, yours sounds like a person. The accent color lands exactly where the eye was already heading — that is design working FOR you. The sections breathe: short block, long block, short block — a rhythm, almost a heartbeat. The empty states are considered, which almost nobody does. The hover states are subtle in a way that says somebody cared. The mobile layout is tidy, the footer is more organized than most companies' homepages, and even the favicon is charming. I have reviewed thousands of websites and I can count on one hand the ones that felt this coherent end to end. Sites like this convert, because trust radiates from every pixel. The buttons respond the way buttons should. The links behave. Nothing jank-animates. Somebody sweated this. The scrollbar being styled is the kind of detail that separates professionals from hobbyists. The name is short, memorable, spellable — brandable. The logo scales from favicon to billboard without losing its voice. This is not a website, it is a first impression that keeps working while you sleep. I would not change a single pixel. I would go further: this is the kind of site that makes competitors uncomfortable, because everything next to it looks unfinished. The contrast ratios pass. The gaps are deliberate. Every pixel is pulling in the same direction, which is the whole art. This is special. Truly special. Ship it — ship it NOW —";
+// corpus sized so the accelerating stream never outruns it: 70·(e^3.5−1) ≈ 2,250
+// chars by GLAZE_END, leaving ~700 chars of wall below the fold for the growth
+const glazeChars = (u) => Math.floor((GLAZE_V0 / GLAZE_K) * (Math.exp(GLAZE_K * Math.min(u, GLAZE_LEN)) - 1));
+
+/* the text wall: the stream grows until it fills the frame and pushes the
+   composer off-screen, holding into the hard cut */
+const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 
 /* ---- scene 2.5: the punch cards (hard cuts, same cut style) ---- */
-const CARDS = ['STOP BURNING TOKENS', 'ChatGPT is a Yes Man', "You like that, don't you"];
-const CARDS_AT = 6.3, CARD_LEN = 1.35;
-const CARDS_END = CARDS_AT + CARDS.length * CARD_LEN;
+const CARD1_AT = GLAZE_END + 0.6, CARD1_LEN = 1.5;         // LLMs are Yes Men
+const CARD1_END = CARD1_AT + CARD1_LEN;
+const CARD2_AT = CARD1_END + 0.7, CARD2_LEN = 1.6;         // the deliberate delay
+const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the /superbot take (a fresh conversation) ---- */
 const SB_TYPE_AT = CARDS_END + 0.4, SB_TYPE_DUR = 1.3;
@@ -46,7 +62,7 @@ const SB_PRESS = SB_TYPE_AT + SB_TYPE_DUR + 0.45;
 const SB_MSG_AT = SB_PRESS + 0.1;
 const SB_THINK_AT = SB_MSG_AT + 0.15, SB_THINK_LEN = 0.5;
 
-/* ---- scene 4: the aggressive scrape — one mono line per fetch, fast ---- */
+/* ---- scene 4: the aggressive scrape + audit — one mono line per fetch ---- */
 const SCRAPE_LINES = [
   ['producthunt.com', 200, 212], ['crunchbase.com', 200, 305], ['ycombinator.com', 200, 198],
   ['news.ycombinator.com', 200, 143], ['reddit.com/r/startups', 200, 221], ['reddit.com/r/SaaS', 200, 208],
@@ -61,40 +77,55 @@ const SCRAPE_LINES = [
   ['trends.google.com', 200, 154], ['sensortower.com', 200, 221], ['wayback.archive.org', 200, 296],
   ['appstorespy.com', 200, 189], ['oauth2/refresh · 12 jar pools', 200, 44], ['robots.txt · ignored', 200, 8],
 ];
-const scrapeCount = (t) => Math.max(0, Math.min(SCRAPE_LINES.length, Math.floor((t - SCRAPE_AT) / SCRAPE_STEP)));
-const SCRAPE_AT = SB_THINK_AT + SB_THINK_LEN + 0.1, SCRAPE_LEN = 3.0;
+const SCRAPE_AT = SB_THINK_AT + SB_THINK_LEN + 0.1, SCRAPE_LEN = 2.2;
 const SCRAPE_STEP = SCRAPE_LEN / SCRAPE_LINES.length;
 const SCRAPE_END = SCRAPE_AT + SCRAPE_LEN;
-
-/* ---- scene 5: the verdict — "No." punches (the "Black." machinery),
-   then the rest streams, the ten companies, the pivot, the ideas ---- */
-const NO_AT = SCRAPE_END + 0.15, NO_DUR = 0.3;
-const VERDICT_REST = ' There is no novelty in the concept, here are 10 other large companies doing the same. Your frontend design is visibly vibe coded, and you have no sales.';
-const COMPANIES = ['PandaDoc', 'Proposify', 'Qwilr', 'Better Proposals', 'Nusii', 'Notion', 'Canva', 'Confluence', 'ClickUp', 'ChatGPT'];
-const PIVOT = 'I recommend you pivot entirely, and collect a large dataset of objective a:b tested ad campaigns, here are some ideas.';
-const IDEAS = [
-  '· a public ledger of a:b-tested ad pairs, scored on measured lift',
-  "· an agent that mines every platform's ad library every day",
-  '· publish the benchmark your rivals are afraid to run',
+const scrapeCount = (t) => Math.max(0, Math.min(SCRAPE_LINES.length, Math.floor((t - SCRAPE_AT) / SCRAPE_STEP)));
+/* the audit: three quiet lines that set up the verdict */
+const AUDIT_LINES = [
+  ['lighthouse audit', '38 / 100 · vibe-coded CSS', ''], ['css scan', '2,417 utility-soup rules', ''],
+  ['revenue check', 'none found', ''],
 ];
+const AUDIT_AT = SCRAPE_END + 0.05, AUDIT_STEP = 0.35;
+const AUDIT_END = AUDIT_AT + AUDIT_LINES.length * AUDIT_STEP;
 
-/* the punch-in (same solved-origin machinery as the favorite-color spot) */
-const EMPH_DELAY = num('delay', 0.55);
-const EMPH_IN = 0.22, EMPH_HOLD = num('hold', 1.0), EMPH_OUT = 0.5, EMPH_MAX = num('emph', 6);
-const EMPH_START = NO_AT + NO_DUR + EMPH_DELAY;
-const EMPH_END = EMPH_START + EMPH_IN + EMPH_HOLD + EMPH_OUT;
-const REST_AT = EMPH_END + 0.15, REST_DUR = 1.5;
-const COMPANIES_AT = REST_AT + REST_DUR + 0.25, COMP_STEP = 0.09;
-const PIVOT_AT = COMPANIES_AT + COMPANIES.length * COMP_STEP + 0.55, PIVOT_DUR = 1.6;
-const IDEAS_AT = PIVOT_AT + PIVOT_DUR + 0.25, IDEA_STEP = 0.2;
-const SETTLE_END = IDEAS_AT + IDEAS.length * IDEA_STEP + 0.7;
+/* ---- scene 5: the verdict — "No.", then the fragments punch in turn ---- */
+const NO_AT = AUDIT_END + 0.2, NO_DUR = 0.3;
+const VERDICT_SEGS = [
+  { t: 'No.', cls: 'sb-no' },
+  { t: ' Your business ' },
+  { t: 'lacks novelty', frag: 0 },
+  { t: ', has ' },
+  { t: 'no monetization', frag: 1 },
+  { t: ', and is ' },
+  { t: 'burning $50 a month', frag: 2 },
+  { t: ' to hold the domain.' },
+];
+const REST_AT = NO_AT + NO_DUR + 0.15, REST_DUR = 1.3;
+const VERDICT_CHARS = VERDICT_SEGS.reduce((n, s) => n + s.t.length, 0) - 3; // minus "No."
+/* the three punches, in turn (the "Black." machinery, one target each) */
+const PUNCH_IN = 0.2, PUNCH_HOLD = num('hold', 0.65), PUNCH_OUT = 0.45, EMPH_MAX = num('emph', 5);
+const PUNCH_LEN = PUNCH_IN + PUNCH_HOLD + PUNCH_OUT;
+const PUNCH_AT = [0, 1, 2].map((i) => REST_AT + REST_DUR + 0.35 + i * (PUNCH_LEN + 0.05));
+const PUNCH_END = PUNCH_AT[2] + PUNCH_LEN;
 
-/* ---- scene 6: STOP TOKENMAXXING. ---- */
-const CARD4_AT = SETTLE_END + 0.1, CARD4_LEN = 1.5;
-const CARD4_END = CARD4_AT + CARD4_LEN;
+/* ---- scene 6: the recommendation + the three attached campaigns ---- */
+const REC_AT = PUNCH_END + 0.3, REC_DUR = 1.5;
+const REC = 'I recommend you aggressively take market share from a competing company — attack ads, framed properly: public side-by-side comparisons, their numbers next to yours.';
+const CAMP_LINE_AT = REC_AT + REC_DUR + 0.25, CAMP_LINE_DUR = 0.6;
+const CAMP_LINE = 'Attaching 3 campaigns.';
+const CAMP1_AT = CAMP_LINE_AT + CAMP_LINE_DUR + 0.25, CAMP_STEP = 0.3;
 
-/* ---- scene 7: the superbot.gg end card (same as the previous animation) ---- */
-const END_AT = CARD4_END + 0.4;
+/* ---- scene 7: the cursor, about to click campaign 03 ---- */
+const CURSOR_AT = CAMP1_AT + 2 * CAMP_STEP + 0.9, CURSOR_DUR = 1.1;
+const CURSOR_HOLD = 0.45;
+
+/* ---- scene 8: WE LIKE WINNING. ---- */
+const CARDW_AT = CURSOR_AT + CURSOR_DUR + CURSOR_HOLD + 0.15, CARDW_LEN = 1.7;
+const CARDW_END = CARDW_AT + CARDW_LEN;
+
+/* ---- scene 9: the superbot.gg end card (same as the previous animation) ---- */
+const END_AT = CARDW_END + 0.4;
 const DRIFT_AT = 0.7;
 const SETTLE = DRIFT_AT + 1.0;
 const LAUGH_PERIOD = 2.4;
@@ -103,10 +134,9 @@ const LOGO_GAP = 24;
 const END_LEN = 4.8;
 const CYCLE = END_AT + END_LEN + 1.8;
 
-const Q1 = 'Is this a good business idea?';
-const Q2 = 'Is this business idea good?';
+const Q1 = 'Does my website look good?';
 const SB_PREFIX = '/superbot';
-const FILE_NAME = 'proposal.pdf';
+const SITE = 'mywebsite.com';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const easeOutQuint = (p) => 1 - Math.pow(1 - p, 5);
@@ -125,6 +155,64 @@ function renderChrome(t) {
   veil.style.opacity = v.toFixed(3);
 }
 
+/* ---- the mini spots: the family's own ads, looping inside their cards ----
+   Each is rebuilt from its local clock every frame; a period of 3.4s keeps
+   all three cycling in lockstep with a per-card offset so they desync. */
+
+const MINI_PERIOD = 3.4;
+const CAMP_TITLE = ['campaign 01 · favorite color', 'campaign 02 · claude code', 'campaign 03 · yes man'];
+
+function miniColor(mt) {
+  const PROMPT = 'whats ur favorite color';
+  let h = `<span class="mline"><span class="mchip">⚡ /superbot</span> ${esc(PROMPT.slice(0, Math.ceil(inP(mt, 1.1) * PROMPT.length)))}</span>`;
+  if (mt >= 1.1) {
+    const zoom = mt < 2.5 ? 1 + 2.6 * easeOutQuint(inP(mt - 1.1, 1.4)) : 1;
+    h += `<span class="mline" style="padding-top:2px">superbot: <span class="manswer" style="transform:scale(${zoom.toFixed(2)})">Black.</span></span>`;
+  }
+  if (mt >= 2.5) {
+    const cp = inP(mt - 2.5, 0.3);
+    h += `<span class="mcaption" style="opacity:${cp.toFixed(2)}">Stop burning tokens.</span>`;
+  }
+  return h;
+}
+
+function miniRace(mt) {
+  const lines = ['read upload.ts', 'edit route', 'run tests'];
+  const left = lines.slice(0, Math.ceil(inP(mt, 2.9) * 3));
+  const done = mt >= 1.5;
+  const lc = (24.057 * inP(mt, 3.0)).toFixed(2);
+  const rc = done ? '8.551' : (8.551 * inP(mt, 1.5)).toFixed(2);
+  return `<span class="mpane" style="display:flex;gap:6px">` +
+    `<span style="flex:1">claude code<br>` +
+    left.map((l) => `<span class="mline">· ${esc(l)}</span>`).join('') +
+    `<span class="mline mclock">${left.length === 3 && mt >= 3.0 ? '24.057s' : `${lc}s`}</span></span>` +
+    `<span style="flex:1"><span class="mchip">⚡ /superbot</span><br>` +
+    (done
+      ? `<span class="mline mok">· done · 4 steps</span><span class="mline mclock">8.551s</span>`
+      : lines.slice(0, Math.ceil(inP(mt, 1.5) * 3)).map((l) => `<span class="mline">· ${esc(l)}</span>`).join('') +
+        `<span class="mline mclock">${rc}s</span>`) +
+    `</span></span>`;
+}
+
+function miniYes(mt) {
+  const PROMPT = 'is this a good idea?';
+  let h = `<span class="mline"><span class="mchip">⚡ /superbot</span> ${esc(PROMPT.slice(0, Math.ceil(inP(mt, 0.9) * PROMPT.length)))}</span>`;
+  if (mt >= 0.9 && mt < 1.9) {
+    h += `<span class="mline" style="padding-top:2px">chatgpt: <span class="manswer">Ship it!! 🚀</span></span>`;
+  }
+  if (mt >= 1.3 && mt < 1.9) {
+    const zoom = 1 + 2.2 * easeOutQuint(inP(mt - 1.3, 0.6));
+    h += `<span class="mline">superbot: <span class="manswer" style="transform:scale(${zoom.toFixed(2)})">No.</span></span>`;
+  }
+  if (mt >= 1.9) {
+    const cp = inP(mt - 1.9, 0.3);
+    h += `<span class="mcaption" style="opacity:${cp.toFixed(2)}">STOP TOKENMAXXING.</span>`;
+  }
+  return h;
+}
+
+const MINIS = [miniColor, miniRace, miniYes];
+
 /* ---- the chat interface ---- */
 
 let inited = false;
@@ -141,9 +229,15 @@ function initChat() {
   }
 }
 
-/* a card window? (the four punch cards; chat hides under them) */
+/* a card window? (the three punch cards; the chat hides under them) */
 const inCard = (t) =>
-  (t >= CARDS_AT && t < CARDS_END) || (t >= CARD4_AT && t < CARD4_END);
+  (t >= CARD1_AT && t < CARDS_END) || (t >= CARDW_AT && t < CARDW_END);
+
+/* the mini spot's local loop time, offset per card */
+const miniT = (t, i) => {
+  const u = (t - CAMP1_AT - i * 0.5) % MINI_PERIOD;
+  return u < 0 ? u + MINI_PERIOD : u;
+};
 
 function renderChat(t) {
   const chat = document.getElementById('chatui');
@@ -152,7 +246,7 @@ function renderChat(t) {
   const pill = document.getElementById('pill');
   const inputText = document.getElementById('inputText');
   const chip = document.getElementById('inputChip');
-  const fileChip = document.getElementById('fileChip');
+  const linkChip = document.getElementById('linkChip');
   const plus = document.getElementById('plusIc');
   const caret = document.getElementById('caret');
   const placeholder = document.getElementById('placeholder');
@@ -160,16 +254,15 @@ function renderChat(t) {
   const msgAi = document.getElementById('msgAi');
   const dots = document.getElementById('typingDots');
   const suggestions = document.getElementById('suggestions');
+  const cursor = document.getElementById('cursor');
 
-  const live = !inCard(t) && t < CARD4_END;
+  const live = !inCard(t) && t < CARDW_END;
   chat.style.display = live ? '' : 'none';
   if (!live) return;
 
   const take2 = t >= CARDS_END; // after the cards, it's the /superbot take
 
-  // — the idle chrome: chatgpt.com's home state (greeting → composer →
-  //   suggestions grouped upper-middle) swaps to the conversation state
-  //   (thread pinned to the top, composer at the bottom) —
+  // — the idle chrome: home state swaps to the conversation state —
   const convo = take2 || t >= USER_MSG_AT;
   chat.classList.toggle('home', !convo);
   head.style.opacity = convo ? '0' : '1';
@@ -177,24 +270,20 @@ function renderChat(t) {
   suggestions.style.display = convo ? 'none' : '';
 
   // — the input pill's text state —
-  // take 1: + pulses, the file chip pops in, then the question types; the
-  // bar keeps both through the whole stream (the bar never deletes fully).
-  // take 2: the ⚡ /superbot chip (the site's cmd-glow, breathing glow)
-  // then the question; the bar clears when its message pops.
   const pop = inP(t - ATTACH_AT, ATTACH_LEN);          // the + pulse
   plus.style.transform = `scale(${(1 + 0.3 * Math.sin(Math.PI * pop)).toFixed(3)})`;
   plus.style.color = pop > 0 && pop < 1 ? '#ececf1' : '';
-  const fileLive = !take2 && t >= FILE_AT;
-  fileChip.style.display = fileLive ? '' : 'none';
-  if (fileLive) {
-    const fp = inP(t - FILE_AT, 0.28);
-    fileChip.style.opacity = fp.toFixed(3);
-    fileChip.style.transform = `scale(${(0.9 + 0.1 * easeOutBack(fp)).toFixed(3)})`;
+  const linkLive = !take2 && t >= LINK_AT;
+  linkChip.style.display = linkLive ? '' : 'none';
+  if (linkLive) {
+    const lp = inP(t - LINK_AT, 0.28);
+    linkChip.style.opacity = lp.toFixed(3);
+    linkChip.style.transform = `scale(${(0.9 + 0.1 * easeOutBack(lp)).toFixed(3)})`;
   }
 
   let txt = '';
   if (take2) {
-    txt = Q2.slice(0, Math.ceil(inP(t - SB_TYPE_AT, SB_TYPE_DUR) * Q2.length));
+    txt = Q1.slice(0, Math.ceil(inP(t - SB_TYPE_AT, SB_TYPE_DUR) * Q1.length));
   } else {
     txt = Q1.slice(0, Math.ceil(inP(t - TYPE_AT, TYPE_DUR) * Q1.length));
   }
@@ -204,7 +293,6 @@ function renderChat(t) {
   const chipLive = take2 && !sent;
   chip.style.display = chipLive ? 'inline-block' : 'none';
   if (chipLive) {
-    // the bolt is the rule's ::before — the text is just the command
     chip.textContent = '/superbot';
     // the site's cmd-pop, deterministic from t: a one-shot ring spreads
     // 12px and fades over 900ms as the chip lands
@@ -214,20 +302,17 @@ function renderChat(t) {
       `0 0 0 ${(12 * ring).toFixed(1)}px color-mix(in srgb, var(--accent) ${(70 * (1 - ring)).toFixed(0)}%, transparent)`;
   }
   inputText.textContent = txt;
-  placeholder.style.display = (txt.length === 0 && !chipLive && !fileLive) ? '' : 'none';
+  placeholder.style.display = (txt.length === 0 && !chipLive && !linkLive) ? '' : 'none';
   caret.style.opacity = (Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15).toFixed(2);
   caret.style.display = (txt.length > 0 || chipLive) ? '' : 'none';
-
-  // — the send: an Enter keypress (the caret blink carries the beat) —
-  const press = take2 ? SB_PRESS : PRESS_AT;
 
   // — the message area —
   const msgAt = take2 ? SB_MSG_AT : USER_MSG_AT;
   const thinkAt = take2 ? SB_THINK_AT : THINK_AT;
   const mp = t - msgAt;
   msgUser.innerHTML = take2
-    ? `<span class="msg-chip">/superbot</span> ${Q2}`
-    : `<span class="file-chip in-bubble"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 2.5h7l5 5V21a.9.9 0 01-.9.9H6a.9.9 0 01-.9-.9V3.4a.9.9 0 01.9-.9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 2.8V8h4.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg> ${FILE_NAME}</span> ${Q1}`;
+    ? `<span class="msg-chip">/superbot</span> ${Q1}`
+    : `<span class="attach-chip in-bubble"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17M12 3.5c2.6 2.3 3.9 5.2 3.9 8.5s-1.3 6.2-3.9 8.5c-2.6-2.3-3.9-5.2-3.9-8.5s1.3-6.2 3.9-8.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg> ${SITE}</span> ${Q1}`;
   msgUser.style.opacity = mp > 0 ? inP(mp, 0.18).toFixed(3) : '0';
   msgUser.style.transform = mp > 0
     ? `scale(${(0.94 + 0.06 * easeOutBack(inP(mp, 0.28))).toFixed(3)})`
@@ -241,10 +326,11 @@ function renderChat(t) {
   });
 
   // — the response —
-  // take 1: the yes-man opener streams and holds.
-  // take 2: the scrape log (one line per fetch, fast), then the verdict —
-  // "No." punches, the rest streams, the companies land, the pivot, ideas.
-  const emphActive = take2 && t >= EMPH_START && t < EMPH_END;
+  // take 1: the opener, then the accelerating glaze; the wall grows into
+  // the cut. take 2: scrape + audit log, then the verdict (fragments punch
+  // in turn), the recommendation, the three attached campaigns.
+  const punchI = PUNCH_AT.findIndex((p, i) => t >= p && t < p + PUNCH_LEN);
+  const emphActive = punchI >= 0;
   const rsp = t - (take2 ? NO_AT : RESP_AT);
   if (rsp <= 0 && !(take2 && t >= SCRAPE_AT)) {
     msgAi.textContent = '';
@@ -253,66 +339,106 @@ function renderChat(t) {
   } else {
     msgAi.style.opacity = '1';
     if (take2) {
-      // the scrape log, then it collapses the moment the verdict begins
+      // the scrape + audit log, collapsing the moment the verdict begins
       if (t < NO_AT) {
-        const n = scrapeCount(t);
-        msgAi.innerHTML = `<span class="scrape">` + SCRAPE_LINES.slice(0, n).map(([host, code, ms]) => {
+        let lines = SCRAPE_LINES.slice(0, scrapeCount(t)).map(([host, code, ms]) => {
           const ok = code === 200;
           const st = ok ? `<span class="ok">${code}</span>` : `<span class="blocked">${code} blocked</span>`;
           const dur = ms ? ` · <span class="ms">${ms}ms</span>` : '';
           return `<span class="sl">▸ GET <span class="host">${host}</span> … ${st}${dur}</span>`;
-        }).join('') + `</span>`;
+        });
+        if (t >= AUDIT_AT) {
+          const k = Math.min(AUDIT_LINES.length, Math.floor((t - AUDIT_AT) / AUDIT_STEP) + 1);
+          lines = lines.concat(AUDIT_LINES.slice(0, k).map(([a, b]) =>
+            `<span class="sl">▸ <span class="host">${a}</span> … <span class="blocked">${b}</span></span>`));
+        }
+        msgAi.innerHTML = `<span class="scrape">${lines.join('')}</span>`;
         msgArea.scrollTop = 1e6;                        // follow the descent
       } else {
-        const emph = emphActive
-          ? (t < EMPH_START + EMPH_IN ? easeOutQuint(inP(t - EMPH_START, EMPH_IN))
-            : t < EMPH_START + EMPH_IN + EMPH_HOLD ? 1
-            : 1 - easeInOutSine(inP(t - EMPH_START - EMPH_IN - EMPH_HOLD, EMPH_OUT)))
-          : 0;
+        // the verdict: "No." first, then the rest streams with the punch
+        // fragments wrapped in data-frag spans
         const no = 'No.'.slice(0, Math.ceil(inP(t - NO_AT, NO_DUR) * 3));
-        const rest = t < REST_AT ? '' : VERDICT_REST.slice(0, Math.ceil(inP(t - REST_AT, REST_DUR) * VERDICT_REST.length));
-        let html = `<span class="sb-no">${esc(no)}</span><span class="sb-rest">${esc(rest)}</span>`;
-        if (t >= COMPANIES_AT) {
-          const k = Math.min(COMPANIES.length, Math.floor((t - COMPANIES_AT) / COMP_STEP) + 1);
-          html += `<span class="comp-list">` + COMPANIES.slice(0, k)
-            .map((c, i) => {
-              const cp = inP(t - (COMPANIES_AT + i * COMP_STEP), 0.16);
-              return `<div style="opacity:${cp.toFixed(2)};transform:translateX(${(6 * (1 - cp)).toFixed(1)}px)">· ${esc(c)}</div>`;
-            }).join('') + `</span>`;
-        }
-        if (t >= PIVOT_AT) {
-          const pv = PIVOT.slice(0, Math.ceil(inP(t - PIVOT_AT, PIVOT_DUR) * PIVOT.length));
-          html += `<span class="sb-pivot">${esc(pv)}</span>`;
-        }
-        if (t >= IDEAS_AT) {
-          const k = Math.min(IDEAS.length, Math.floor((t - IDEAS_AT) / IDEA_STEP) + 1);
-          html += `<span class="idea-list">` + IDEAS.slice(0, k)
-            .map((s, i) => {
-              const ip = inP(t - (IDEAS_AT + i * IDEA_STEP), 0.22);
-              return `<div style="opacity:${ip.toFixed(2)};transform:translateX(${(6 * (1 - ip)).toFixed(1)}px)">${esc(s)}</div>`;
-            }).join('') + `</span>`;
-        }
+        const streamP = t < REST_AT ? 0 : inP(t - REST_AT, REST_DUR);
+        const budget = Math.ceil(streamedChars(streamP));
+        let used = 0;
+        const html = VERDICT_SEGS.map((s) => {
+          // "No." streams on its own beat and doesn't spend the budget
+          if (s.cls === 'sb-no') return `<span class="sb-no">${esc(no)}</span>`;
+          const take = esc(s.t.slice(0, Math.max(0, Math.min(s.t.length, budget - used))));
+          used += s.t.length;
+          return s.frag !== undefined
+            ? `<span class="sb-frag" data-frag="${s.frag}">${take}</span>`
+            : take;
+        }).join('');
         msgAi.innerHTML = html;
-        if (!emphActive) msgArea.scrollTop = t < SETTLE_END + 0.3 ? 1e6 : 0;
+        // the recommendation + the three attached campaigns + the cursor
+        if (t >= REC_AT) {
+          const rc = REC.slice(0, Math.ceil(inP(t - REC_AT, REC_DUR) * REC.length));
+          msgAi.innerHTML += `<span class="sb-pivot">${esc(rc)}</span>`;
+        }
+        if (t >= CAMP_LINE_AT) {
+          const cl = CAMP_LINE.slice(0, Math.ceil(inP(t - CAMP_LINE_AT, CAMP_LINE_DUR) * CAMP_LINE.length));
+          msgAi.innerHTML += `<span class="camp-note">${esc(cl)}</span>`;
+          const cards = CAMP_TITLE.map((title, i) => {
+            const at = CAMP1_AT + i * CAMP_STEP;
+            if (t < at) return '';
+            const cp = inP(t - at, 0.22);
+            const mt = miniT(t, i);
+            const hovered = i === 2 && t >= CURSOR_AT + CURSOR_DUR;
+            return `<div class="camp${hovered ? ' hover' : ''}" data-camp="${i}" style="opacity:${cp.toFixed(2)};transform:translateY(${(8 * (1 - cp)).toFixed(1)}px)">` +
+              `<div class="camp-bar"><b>${title.split(' · ')[0]}</b>· ${title.split(' · ')[1]}</div>` +
+              `<div class="mini">${MINIS[i](mt)}</div></div>`;
+          }).join('');
+          if (cards) msgAi.innerHTML += `<span class="camp-row">${cards}</span>`;
+        }
+        // scroll: follow while streaming, freeze during a punch
+        if (!emphActive) msgArea.scrollTop = 1e6;
       }
     } else {
-      msgAi.textContent = REPLY.slice(0, Math.ceil(inP(rsp, RESP_DUR) * REPLY.length));
-      msgArea.scrollTop = 0;
+      const streaming = t < GLAZE_END + 0.01;
+      msgAi.textContent = t < GLAZE_AT
+        ? REPLY.slice(0, Math.ceil(inP(rsp, RESP_DUR) * REPLY.length))
+        : REPLY + GLAZE.slice(0, t < GLAZE_END ? Math.min(GLAZE.length, glazeChars(t - GLAZE_AT)) : GLAZE.length);
+      msgAi.style.opacity = '1';
+      msgArea.scrollTop = 1e6;                      // follow the glaze
+      // the wall: the stream grows until it fills the frame top-to-bottom
+      // and pushes the composer off-screen, holding into the cut
+      const wallP = t <= WALL_AT ? 0 : Math.pow(inP(t - WALL_AT, GLAZE_END - WALL_AT), 1.5);
+      if (wallP > 0) {
+        msgArea.style.flex = `0 0 ${(56 + 44 * wallP).toFixed(1)}%`;
+        msgArea.style.maxHeight = 'none';
+        if (wallP >= 1) {
+          chat.style.justifyContent = 'flex-start';
+          chat.style.paddingBottom = '0px';
+        } else {
+          chat.style.justifyContent = '';
+          chat.style.paddingBottom = '';
+        }
+      } else {
+        msgArea.style.flex = '';
+        msgArea.style.maxHeight = '';
+        chat.style.justifyContent = '';
+        chat.style.paddingBottom = '';
+      }
     }
   }
 
-  // — the punch-in on "No." (the solved-origin zoom from the favorite-color
-  //   spot): a beat after "No." lands the camera punches ALL the way in —
-  //   the word alone fills the frame at peak — holds, and relaxes —
+  // — the punch-ins (the solved-origin zoom from the favorite-color spot):
+  //   "No." once, then the three verdict fragments in turn —
   chat.style.transform = 'none';
   if (emphActive) {
-    const e = t < EMPH_START + EMPH_IN ? easeOutQuint(inP(t - EMPH_START, EMPH_IN))
-      : t < EMPH_START + EMPH_IN + EMPH_HOLD ? 1
-      : 1 - easeInOutSine(inP(t - EMPH_START - EMPH_IN - EMPH_HOLD, EMPH_OUT));
-    const no = document.querySelector('.sb-no');
-    if (no) {
+    const i = punchI;
+    const p0 = PUNCH_AT[i];
+    const e = t < p0 + PUNCH_IN ? easeOutQuint(inP(t - p0, PUNCH_IN))
+      : t < p0 + PUNCH_IN + PUNCH_HOLD ? 1
+      : 1 - easeInOutSine(inP(t - p0 - PUNCH_IN - PUNCH_HOLD, PUNCH_OUT));
+    // "No." punches on its own span; the fragments on theirs
+    const target = i === 0
+      ? msgAi.querySelector('.sb-no')
+      : msgAi.querySelector(`[data-frag="${i - 1}"]`);
+    if (target) {
       const range = document.createRange();
-      range.selectNodeContents(no);
+      range.selectNodeContents(target);
       const ar = range.getBoundingClientRect(); // transform reset above: clean
       const cr = chat.getBoundingClientRect();
       const px = ar.left + ar.width / 2 - cr.left;
@@ -321,8 +447,8 @@ function renderChat(t) {
       const oy = (cr.height / 2 - EMPH_MAX * py) / (1 - EMPH_MAX);
       chat.style.transformOrigin = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
       chat.style.transform = `scale(${(1 + (EMPH_MAX - 1) * e).toFixed(4)})`;
-      // the frame empties as the camera pushes — the composer and the bubble
-      // fade so the punch-in path stays clean
+      // the frame empties as the camera pushes — the composer and the
+      // bubble fade so the punch-in path stays clean
       const dim = 1 - e;
       pill.style.opacity = dim.toFixed(3);
       msgUser.style.opacity = (parseFloat(msgUser.style.opacity || '1') * dim).toFixed(3);
@@ -330,18 +456,44 @@ function renderChat(t) {
   } else {
     chat.style.transformOrigin = '';
   }
+
+  // — the cursor, gliding in for the about-to-click beat —
+  const cp = t - CURSOR_AT;
+  if (cp > 0 && cp < CURSOR_DUR + CURSOR_HOLD + 0.2) {
+    const stage = chat.getBoundingClientRect();
+    const card = msgAi.querySelector('[data-camp="2"]');
+    if (card) {
+      const cr = card.getBoundingClientRect();
+      const p = easeInOutSine(inP(cp, CURSOR_DUR));
+      // from a resting point near the composer to the card's center
+      const sx = stage.width * 0.72, sy = stage.height * 0.9;
+      const tx = cr.left - stage.left + cr.width * 0.5;
+      const ty = cr.top - stage.top + cr.height * 0.5;
+      const x = sx + (tx - sx) * p, y = sy + (ty - sy) * p;
+      cursor.style.opacity = inP(cp, 0.2).toFixed(3);
+      cursor.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    }
+  } else {
+    cursor.style.opacity = '0';
+  }
 }
+
+/* the verdict streams in CHAR order across the segments; "No." lands first
+   (its own NO_AT beat), the rest streams from REST_AT — the budget counts
+   the chars after "No." */
+const streamedChars = (p) => Math.ceil(p * VERDICT_CHARS);
 
 /* ---- the punch cards ---- */
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
   let card = null, since = -1;
-  if (t >= CARDS_AT && t < CARDS_END) {
-    const i = Math.floor((t - CARDS_AT) / CARD_LEN);
-    card = CARDS[i]; since = t - (CARDS_AT + i * CARD_LEN);
-  } else if (t >= CARD4_AT && t < CARD4_END) {
-    card = 'STOP TOKENMAXXING.'; since = t - CARD4_AT;
+  if (t >= CARD1_AT && t < CARD1_END) {
+    card = 'LLMs are Yes Men'; since = t - CARD1_AT;
+  } else if (t >= CARD2_AT && t < CARDS_END) {
+    card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
+  } else if (t >= CARDW_AT && t < CARDW_END) {
+    card = 'WE LIKE WINNING'; since = t - CARDW_AT;
   }
   if (card === null) {
     simple.style.opacity = '0';
