@@ -18,6 +18,7 @@
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
 import { Mascot } from './mascot.js';
+import { EXTRA_TRX } from './transitions/index.js';
 
 /* variant overrides (?key=value — variants.html compares treatments side by
    side): the punch-in depth and its hold */
@@ -66,7 +67,7 @@ const CARDS_END = CARD2_AT + CARD2_LEN;
    gap between out and in for the non-sim ones, out(el, p) animates the card
    layer, in(overlay, q) animates the end card layer (q 0→1). Deterministic
    in t — freeze-frames and arrow-stepping land exactly. ---- */
-const TRX = {
+const BASE_TRX = {
   'fade-black': { d: 0.4, beat: 0.25, inDur: 0.45,
     out: (el, p) => { el.style.opacity = (1 - p).toFixed(3); },
     in: (ov, q) => { ov.style.opacity = q.toFixed(3); } },
@@ -106,6 +107,9 @@ const TRX = {
       ov.style.transform = `scale(${(1.12 - 0.12 * q).toFixed(4)})`;
     } },
 };
+/* base transitions + the transitions/ directory (one file per effect, each
+   default-exporting the same shape). File entries win on name collision. */
+const TRX = { ...BASE_TRX, ...EXTRA_TRX };
 const TRANSITIONS = Object.keys(TRX).map((name) => ({ name, leave: name }));
 const T = (() => {
   const want = Q.get('tr');
@@ -341,7 +345,7 @@ function renderEndcard(t) {
   if (X.in) X.in(overlay, q);
 
   const stage = overlay.getBoundingClientRect();
-  const shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
+  const shift = X.snap ? 1 : easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
   const w = bot.offsetWidth, h = bot.offsetHeight;
   const scale = 1.22;
   const wordW = word.offsetWidth;
@@ -349,12 +353,15 @@ function renderEndcard(t) {
   const left = (stage.width - total) / 2;
   const midY = stage.height / 2;
   const logoX = stage.width / 2 + (left + (w * scale) / 2 - stage.width / 2) * shift;
-  bot.style.transform =
+  const baseBotTransform =
     `translate(${(logoX - w / 2).toFixed(1)}px, ${(midY - h / 2).toFixed(1)}px) scale(${scale.toFixed(3)})`;
+  bot.style.transform = baseBotTransform;
+  if (X.botFx) X.botFx(s, bot, baseBotTransform);
   word.style.opacity = shift.toFixed(3);
   word.style.filter = shift < 1 ? `blur(${(6 * (1 - shift)).toFixed(1)}px)` : 'none';
   word.style.transform =
     `translate(${(left + w * scale + LOGO_GAP + 20 * (1 - shift)).toFixed(1)}px, -50%)`;
+  if (X.wordFx) X.wordFx(s, word, shift);
 
   if (endBot) {
     const laughing = s >= SETTLE && ((s - SETTLE) % LAUGH_PERIOD) < LAUGH_DUR;
