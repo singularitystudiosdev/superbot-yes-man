@@ -197,11 +197,6 @@ body {
   color: var(--fg);
   opacity: 0; will-change: opacity, transform, filter;
 }
-/* per-letter spans for the split leave mechanisms (shatter, gravity, …) */
-.simple .ltr {
-  display: inline-block; white-space: pre;
-  will-change: transform, opacity;
-}
 
 /* the end card: PURE black (user ask — was 90% alpha over the blurred wall) */
 .endcard {

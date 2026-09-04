@@ -11,7 +11,9 @@
 // llm streams its opener — then a glazing tirade with periodic 😍✨💖 emojis
 // that keeps accelerating and NEVER stops, the wall growing into the hard
 // cut. Cards: "LLMs are made to agree with you" (2.1s) — cut —
-// "AND YOU LIKE THAT?" (1.15s) — clean exit to black, beat, outro arrives.
+// "AND YOU LIKE THAT?" (1.15s) — FRAME-level transition: the whole card
+// layer leaves and the end card arrives (sim ones tile; others run
+// exit → pure-black beat → arrival — see TRX).
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -55,234 +57,56 @@ const CARD1_END = CARD1_AT + CARD1_LEN;
 const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then the transition)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
-/* ---- the card→outro transition: 40 FUNDAMENTALLY different mechanisms
-   (user ask — no two are the same trick with different timing). Pick one
-   with ?tr=NAME; variants.html compares them all. Each entry owns how the
-   "AND YOU LIKE THAT?" text leaves: d = leave duration, split = needs
-   per-letter spans, mas = how the outro arrives. The exit runs on OPAQUE
-   black, a global pure-black beat follows (TRANS_BEAT below), and only then
-   the outro arrives — nothing ever overlaps.
-   fn(el, L, p, t): el is the card overlay, L the letter spans (when split),
-   p the eased 0→1 progress, t the absolute scene time. Deterministic in
-   (p, t) — freeze-frames and arrow-stepping land exactly. ---- */
-const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
-const GLYPH_SCRAMBLE = '▓▒░#*+%@&';
-const scrambleChar = (i, t) => GLYPH_SCRAMBLE[Math.floor(hash(i * 3.7 + Math.floor(t * 20)) * GLYPH_SCRAMBLE.length) % GLYPH_SCRAMBLE.length];
-
-const LEAVES = {
-  fade: { d: 0.55, fn: (el, L, p) => { el.style.opacity = (1 - p).toFixed(3); } },
-  shatter: { d: 0.8, split: true, mas: 'pop', fn: (el, L, p) => {
-    L.forEach((s, i) => {
-      const a = hash(i) * Math.PI * 2, dist = 70 + 90 * hash(i + 7);
-      const q = clamp(p * 1.3 - 0.3 * hash(i + 3), 0, 1);
-      s.style.transform = `translate(${(Math.cos(a) * dist * q).toFixed(1)}px, ${(Math.sin(a) * dist * q + 26 * q * q).toFixed(1)}px) rotate(${((hash(i + 11) - 0.5) * 160 * q).toFixed(1)}deg)`;
-      s.style.opacity = (1 - q).toFixed(3);
-    });
-  } },
-  cascade: { d: 0.85, split: true, fn: (el, L, p) => {
-    const n = L.length;
-    L.forEach((s, i) => { s.style.opacity = clamp(p * 2 - (i / n) * 1.6, 0, 1) === 0 ? '0' : (1 - clamp(p * 2 - (i / n) * 1.6, 0, 1)).toFixed(3); });
-  } },
-  erase: { d: 0.7, fn: (el, L, p, t) => { setCard(el, cardNow(t, 1 - p)); } },
-  wipe: { d: 0.55, fn: (el, L, p) => { el.style.clipPath = `inset(-2% ${(-2 + p * 102).toFixed(2)}% -2% -2%)`; } },
-  iris: { d: 0.6, fn: (el, L, p) => { el.style.clipPath = `circle(${((1 - p) * 75).toFixed(2)}% at 50% 50%)`; } },
-  melt: { d: 0.75, fn: (el, L, p) => {
-    el.style.filter = `blur(${(14 * p).toFixed(2)}px)`;
-    el.style.letterSpacing = `${(8 * p).toFixed(2)}px`;
-    el.style.opacity = (1 - p * p).toFixed(3);
-  } },
-  slide: { d: 0.5, mas: 'rise', fn: (el, L, p) => { el.style.transform = `translateX(${(-p * 110).toFixed(2)}vw)`; } },
-  flip: { d: 0.6, fn: (el, L, p) => {
-    el.style.transform = `perspective(600px) rotateX(${(p * 90).toFixed(2)}deg)`;
-    el.style.opacity = (1 - p * p).toFixed(3);
-  } },
-  zoom: { d: 0.55, mas: 'nodrift', fn: (el, L, p) => {
-    el.style.transform = `scale(${(1 + 2.4 * p).toFixed(4)})`;
-    el.style.filter = `blur(${(12 * p).toFixed(2)}px)`;
-    el.style.opacity = (1 - p * p).toFixed(3);
-  } },
-  sink: { d: 0.6, fn: (el, L, p) => {
-    el.style.transform = `translateY(${(45 * p * p).toFixed(2)}vh) scale(${(1 - 0.6 * p).toFixed(4)})`;
-    el.style.opacity = (1 - p * p).toFixed(3);
-  } },
-  glitch: { d: 0.7, mas: 'pop', fn: (el, L, p, t) => {
-    const step = Math.floor(t * 24);
-    const dx = (hash(step) - 0.5) * 22, dy = (hash(step + 4) - 0.5) * 12;
-    el.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
-    el.style.opacity = p > 0.85 ? '0' : (hash(step + 9) > 0.3 ? '1' : '0.35');
-  } },
-  embers: { d: 0.9, split: true, fn: (el, L, p, t) => {
-    L.forEach((s, i) => {
-      const q = clamp(p * 1.4 - 0.4 * hash(i), 0, 1);
-      const sway = 14 * Math.sin(t * 3 + i) * q;
-      s.style.transform = `translate(${sway.toFixed(1)}px, ${(-90 * (0.4 + hash(i + 5)) * q * q).toFixed(1)}px)`;
-      s.style.opacity = (1 - q).toFixed(3);
-    });
-  } },
-  gravity: { d: 0.8, split: true, fn: (el, L, p) => {
-    L.forEach((s, i) => {
-      const q = clamp(p * 1.5 - 0.5 * hash(i), 0, 1);
-      s.style.transform = `translateY(${(70 * q * q * (0.6 + 0.8 * hash(i + 2))).toFixed(1)}vh) rotate(${((hash(i + 6) - 0.5) * 240 * q).toFixed(1)}deg)`;
-      s.style.opacity = q > 0.85 ? '0' : '1';
-    });
-  } },
-  wind: { d: 0.75, split: true, fn: (el, L, p) => {
-    L.forEach((s, i) => {
-      const q = clamp(p * 1.4 - 0.4 * hash(i), 0, 1);
-      s.style.transform = `translateX(${(130 * (0.4 + hash(i + 8)) * q * q).toFixed(1)}vw) skewX(${(-30 * q).toFixed(1)}deg)`;
-      s.style.opacity = (1 - q).toFixed(3);
-    });
-  } },
-  crt: { d: 0.5, fn: (el, L, p) => {
-    if (p < 0.5) {
-      el.style.transform = `scaleY(${Math.max(0.02, 1 - p * 2).toFixed(4)})`;
-    } else {
-      el.style.transform = `scaleY(0.02) scaleX(${Math.max(0, 1 - (p - 0.5) * 2).toFixed(4)})`;
-    }
-  } },
-  static: { d: 0.55, fn: (el, L, p, t) => {
-    const full = cardNow(t);
-    let out = '';
-    for (let i = 0; i < full.length; i++) out += hash(i + Math.floor(t * 20)) < 1 - p ? scrambleChar(i, t) : ' ';
-    setCard(el, out);
-    el.style.opacity = p > 0.8 ? ((1 - p) * 6.6).toFixed(3) : '1';
-  } },
-  flicker: { d: 0.8, fn: (el, L, p, t) => {
-    el.style.opacity = p >= 0.75 ? '0' : (hash(Math.floor(t * 30)) > p ? '1' : '0.15');
-  } },
-  ink: { d: 0.85, fn: (el, L, p) => {
-    el.style.filter = `blur(${(20 * p).toFixed(2)}px)`;
-    el.style.transform = `scale(${(1 + 0.5 * p).toFixed(4)})`;
-    el.style.opacity = Math.pow(1 - p, 1.5).toFixed(3);
-  } },
-  stamp: { d: 0.75, mas: 'pop', fn: (el, L, p, t) => {
-    if (p < 0.3) {
-      el.style.transform = `scale(${(2.6 - 5.33 * p).toFixed(4)})`;
-      el.style.opacity = '1';
-    } else {
-      const q = (p - 0.3) / 0.7;
-      const shake = q < 0.15 ? (hash(Math.floor(t * 40)) - 0.5) * 8 : 0;
-      el.style.transform = `translate(${shake.toFixed(1)}px, ${(60 * q * q).toFixed(2)}vh) scale(1)`;
-      el.style.opacity = (1 - q * q).toFixed(3);
-    }
-  } },
-  bounce: { d: 0.9, fn: (el, L, p) => {
-    const y = 130 * p * p + 20 * Math.abs(Math.sin(p * 14)) * (1 - p);
-    el.style.transform = `translateY(${y.toFixed(1)}vh)`;
-    el.style.opacity = p > 0.9 ? ((1 - p) * 10).toFixed(3) : '1';
-  } },
-  slingshot: { d: 0.7, fn: (el, L, p) => {
-    const x = p < 0.35 ? -60 * easeInOutSine(p / 0.35) : -60 + 1400 * Math.pow((p - 0.35) / 0.65, 2);
-    el.style.transform = `translateX(${x.toFixed(1)}px) scale(${p < 0.35 ? 1 - 0.04 * (p / 0.35) : 1})`;
-  } },
-  coin: { d: 0.6, fn: (el, L, p) => {
-    el.style.transform = `perspective(800px) rotateY(${(p * 160).toFixed(2)}deg) translateX(${(20 * p * p).toFixed(2)}vw)`;
-  } },
-  peel: { d: 0.6, fn: (el, L, p) => {
-    const k = clamp(100 - 200 * p, 0, 100);
-    el.style.clipPath = `polygon(0 0, 100% 0, 100% 0%, ${k}% 100%, 0% ${k}%)`;
-  } },
-  curtain: { d: 0.5, fn: (el, L, p) => {
-    el.style.clipPath = `inset(-2% ${(p * 51).toFixed(2)}% -2% ${(p * 51).toFixed(2)}%)`;
-  } },
-  blinds: { d: 0.6, split: true, fn: (el, L, p) => {
-    L.forEach((s, i) => {
-      const band = i % 4;
-      const q = clamp(p * 1.6 - band * 0.2, 0, 1);
-      s.style.transform = `scaleY(${Math.max(0.02, 1 - q).toFixed(3)})`;
-      s.style.opacity = q > 0.9 ? '0' : '1';
-    });
-  } },
-  part: { d: 0.55, mas: 'pop', split: true, fn: (el, L, p) => {
-    const n = L.length;
-    L.forEach((s, i) => {
-      const dir = i < n / 2 ? -1 : 1;
-      s.style.transform = `translateX(${(dir * 110 * p).toFixed(1)}vw)`;
-      s.style.opacity = (1 - p).toFixed(3);
-    });
-  } },
-  elevator: { d: 0.6, mas: 'wordfirst', fn: (el, L, p) => {
-    el.style.transform = `translateY(${(-55 * p * p).toFixed(2)}vh)`;
-  } },
-  strobe: { d: 0.6, fn: (el, L, p, t) => {
-    el.style.opacity = p >= 0.85 ? '0' : (hash(Math.floor(t * 18)) > 0.5 ? '1' : '0');
-  } },
-  outline: { d: 0.7, fn: (el, L, p) => {
-    if (p < 0.5) {
-      const q = p / 0.5;
-      el.style.color = `rgba(240,240,240,${(1 - q).toFixed(3)})`;
-      el.style.webkitTextStroke = '1px #f0f0f0';
-    } else {
-      const q = (p - 0.5) / 0.5;
-      el.style.color = 'rgba(240,240,240,0)';
-      el.style.webkitTextStroke = `1px rgba(240,240,240,${(1 - q).toFixed(3)})`;
-    }
-  } },
-  echo: { d: 0.65, fn: (el, L, p) => {
-    const shadows = [];
-    for (let k = 1; k <= 5; k++) shadows.push(`${(k * 26 * p).toFixed(1)}px ${(k * 26 * p).toFixed(1)}px 0 rgba(240,240,240,${Math.max(0, 0.5 - k * 0.08).toFixed(3)})`);
-    el.style.textShadow = shadows.join(', ');
-    el.style.opacity = (1 - p).toFixed(3);
-  } },
-  karaoke: { d: 0.8, split: true, fn: (el, L, p) => {
-    const n = L.length;
-    L.forEach((s, i) => {
-      s.style.color = i / n < p ? 'rgba(240,240,240,0.06)' : '';
-    });
-    el.style.opacity = p > 0.85 ? ((1 - p) * 6.6).toFixed(3) : '1';
-  } },
-  magnet: { d: 0.6, split: true, fn: (el, L, p) => {
-    const n = L.length;
-    L.forEach((s, i) => {
-      s.style.transform = `translateX(${((0.5 - i / n) * 340 * p).toFixed(1)}px) scale(${Math.max(0.01, 1 - p).toFixed(3)})`;
-      s.style.opacity = (1 - p).toFixed(3);
-    });
-  } },
-  vortex: { d: 0.85, split: true, fn: (el, L, p) => {
-    L.forEach((s, i) => {
-      const a = hash(i) * Math.PI * 2, r = 220 * (1 - p);
-      s.style.transform = `translate(${(Math.cos(a) * r).toFixed(1)}px, ${(Math.sin(a) * r).toFixed(1)}px) rotate(${(p * 540).toFixed(1)}deg)`;
-      s.style.opacity = (1 - p).toFixed(3);
-    });
-  } },
-  heartbeat: { d: 0.7, fn: (el, L, p) => {
-    el.style.transform = `scale(${(1 + 0.14 * Math.abs(Math.sin(p * Math.PI * 2)) * (1 - p)).toFixed(4)})`;
-    el.style.opacity = p > 0.9 ? ((1 - p) * 10).toFixed(3) : '1';
-  } },
-  snow: { d: 1.0, split: true, fn: (el, L, p, t) => {
-    L.forEach((s, i) => {
-      const q = clamp(p * 1.2 - 0.2 * hash(i), 0, 1);
-      const sway = 24 * Math.sin(t * 1.6 + i) * q;
-      s.style.transform = `translate(${(sway + (hash(i + 4) - 0.5) * 60 * q).toFixed(1)}px, ${(85 * (0.5 + 0.8 * hash(i + 9)) * q * q).toFixed(1)}px)`;
-      s.style.opacity = (1 - q * 0.95).toFixed(3);
-    });
-  } },
-  scramble: { d: 0.7, fn: (el, L, p, t) => {
-    const full = cardNow(t);
-    let out = '';
-    for (let i = 0; i < full.length; i++) out += i / full.length < p ? scrambleChar(i, t) : full[i];
-    setCard(el, out);
-    el.style.opacity = p > 0.85 ? ((1 - p) * 6.6).toFixed(3) : '1';
-  } },
-  bloom: { d: 0.6, mas: 'zoom', fn: (el, L, p) => {
-    el.style.textShadow = `0 0 ${(8 + 34 * p).toFixed(1)}px rgba(240,240,240,${(0.85 * p).toFixed(3)})`;
-    el.style.transform = `scale(${(1 + 0.06 * p).toFixed(4)})`;
-    el.style.opacity = p > 0.72 ? Math.max(0, 1 - (p - 0.72) / 0.09).toFixed(3) : '1';
-  } },
-  shockwave: { d: 0.6, fn: (el, L, p) => {
-    const k = Math.min(3, Math.floor(p * 3.2));
-    el.style.transform = `scale(${(1 + k * 0.28).toFixed(3)})`;
-    el.style.opacity = (1 - k / 3).toFixed(3);
-  } },
-  instant: { d: 0, fn: () => {} },
+/* ---- the card→outro transition: FRAME-level, SaaS-standard scene
+   transitions (user ask — no artsy text tricks; the WHOLE card layer leaves
+   and the WHOLE end card arrives, so the scene itself changes). Pick one
+   with ?tr=NAME; variants.html compares them all.
+   Each entry: d = out duration, sim = the end card arrives during the out
+   (the two frames tile/cover — no content ever overlaps), beat = pure-black
+   gap between out and in for the non-sim ones, out(el, p) animates the card
+   layer, in(overlay, q) animates the end card layer (q 0→1). Deterministic
+   in t — freeze-frames and arrow-stepping land exactly. ---- */
+const TRX = {
+  'fade-black': { d: 0.4, beat: 0.25, inDur: 0.45,
+    out: (el, p) => { el.style.opacity = (1 - p).toFixed(3); },
+    in: (ov, q) => { ov.style.opacity = q.toFixed(3); } },
+  cut: { d: 0, out: () => {}, in: null },
+  'push-left': { d: 0.5, sim: true,
+    out: (el, p) => { el.style.transform = `translateX(${(-p * 100).toFixed(2)}vw)`; },
+    in: (ov, q) => { ov.style.transform = `translateX(${((1 - q) * 100).toFixed(2)}vw)`; } },
+  'push-right': { d: 0.5, sim: true,
+    out: (el, p) => { el.style.transform = `translateX(${(p * 100).toFixed(2)}vw)`; },
+    in: (ov, q) => { ov.style.transform = `translateX(${(-(1 - q) * 100).toFixed(2)}vw)`; } },
+  'push-up': { d: 0.5, sim: true,
+    out: (el, p) => { el.style.transform = `translateY(${(-p * 100).toFixed(2)}vh)`; },
+    in: (ov, q) => { ov.style.transform = `translateY(${((1 - q) * 100).toFixed(2)}vh)`; } },
+  wipe: { d: 0.45, sim: true,
+    out: (el, p) => { el.style.clipPath = `inset(-2% -2% -2% ${(p * 102).toFixed(2)}%)`; },
+    in: null },
+  'slide-over': { d: 0.55, sim: true,
+    out: () => {},
+    in: (ov, q) => { ov.style.transform = `translateY(${((1 - q) * 100).toFixed(2)}%)`; } },
+  blur: { d: 0.45, beat: 0.15, inDur: 0.5,
+    out: (el, p) => {
+      el.style.filter = `blur(${(16 * p).toFixed(2)}px)`;
+      el.style.opacity = (1 - p).toFixed(3);
+    },
+    in: (ov, q) => {
+      ov.style.filter = `blur(${(16 * (1 - q)).toFixed(2)}px)`;
+      ov.style.opacity = q.toFixed(3);
+    } },
+  zoom: { d: 0.4, beat: 0.18, inDur: 0.45,
+    out: (el, p) => {
+      el.style.transform = `scale(${(1 + 1.6 * p).toFixed(4)})`;
+      el.style.filter = `blur(${(10 * p).toFixed(2)}px)`;
+      el.style.opacity = (1 - p * p).toFixed(3);
+    },
+    in: (ov, q) => {
+      ov.style.opacity = q.toFixed(3);
+      ov.style.transform = `scale(${(1.12 - 0.12 * q).toFixed(4)})`;
+    } },
 };
-const TRANSITIONS = Object.keys(LEAVES).map((name) => ({
-  name,
-  leave: name,
-  mas: LEAVES[name].mas || 'plain',
-  d: LEAVES[name].d,
-  split: !!LEAVES[name].split,
-}));
+const TRANSITIONS = Object.keys(TRX).map((name) => ({ name, leave: name }));
 const T = (() => {
   const want = Q.get('tr');
   if (!want) return TRANSITIONS[0];
@@ -291,13 +115,13 @@ const T = (() => {
   return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || TRANSITIONS[0];
 })();
 
-/* the outro reveals as the text starts leaving (so the fade reads as a
-   crossfade into the mascot); the beat variants hold pure black first */
-/* the transition is CLEAN (user ask): the card holds opaque black while its
-   text exits, then a pure-black beat with nothing on screen, THEN the outro
-   arrives — the mascot is never visible under the leaving text */
+/* CLEAN, never a crossfade (user ask): sim transitions tile the two frames
+   (one leaves while the other arrives — they never share pixels); the rest
+   run exit → pure-black beat → arrival, so nothing is ever visible under
+   the leaving card. */
 const TRANS_BEAT = 0.22;
-const OUT_AT = CARDS_END + (T.leave === 'instant' ? 0 : T.d) + TRANS_BEAT;
+const X = TRX[T.leave];
+const OUT_AT = CARDS_END + (X.sim || X.d === 0 ? 0 : X.d + (X.beat ?? TRANS_BEAT));
 
 /* ---- scene 3: the superbot.gg end card, after the transition ---- */
 const DRIFT_AT = 0.7;
@@ -333,7 +157,6 @@ function renderChrome(t) {
 let inited = false;
 let endBot = null;
 let endLaugh = false;
-let endPop = false;
 
 function initChat() {
   if (inited) return;
@@ -447,38 +270,24 @@ function renderChat(t) {
 
 
 /* ---- the punch cards: hard cuts, pure black. The second card holds, then
-   LEAVES by the selected mechanism (40 in LEAVES above) while the outro
-   card background stays opaque (pure black) so nothing shows beneath. ---- */
+   the WHOLE card layer leaves by the selected frame transition (TRX above)
+   while the end card arrives beneath/beside it. ---- */
 
 let currentCard = null;
 
-function setCard(el, text, split) {
-  if (!split) { el.textContent = text; return; }
-  el.textContent = '';
-  for (const ch of text) {
-    const s = document.createElement('span');
-    s.className = 'ltr';
-    s.textContent = ch;
-    el.appendChild(s);
-  }
-}
-
-function cardNow(t, frac) {
-  if (!currentCard) return '';
-  if (frac == null) return currentCard;
-  return currentCard.slice(0, Math.max(0, Math.ceil(frac * currentCard.length)));
+function setCard(el, text) {
+  el.textContent = text;
 }
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
   let card = null, since = -1, leaving = false;
-  const LEAVE = LEAVES[T.leave];
-  const LEAVE_END = CARDS_END + (T.leave === 'instant' ? 0 : LEAVE.d);
+  const LEAVE_END = CARDS_END + X.d;
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
   } else if (t >= CARD2_AT && t < LEAVE_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
-    leaving = t >= CARDS_END && T.leave !== 'instant';
+    leaving = t >= CARDS_END;
   }
   if (card === null) {
     simple.style.opacity = '0';
@@ -486,30 +295,21 @@ function renderCards(t) {
     return;
   }
   currentCard = card;
-  setCard(simple, card, T.split && leaving);
+  setCard(simple, card);
   if (leaving) {
-    // reset every property a leave mechanism can own, then hand the card
-    // to it whole — the background stays opaque black: a clean exit, the
-    // mascot only arrives after the beat
+    // reset every property a frame transition can own, then hand the whole
+    // card layer to it — background stays opaque black
     simple.style.background = '';
     simple.style.opacity = '1';
     simple.style.transform = 'none';
     simple.style.filter = 'none';
-    simple.style.letterSpacing = '';
     simple.style.clipPath = '';
-    simple.style.textShadow = '';
-    simple.style.webkitTextStroke = '';
-    simple.style.color = '';
-    const p = easeInOutSine(inP(t - CARDS_END, LEAVE.d));
-    LEAVE.fn(simple, LEAVE.split ? Array.from(simple.children) : null, p, t);
+    const p = easeInOutSine(inP(t - CARDS_END, X.d));
+    X.out(simple, p, t);
     return;
   }
   simple.style.background = '';
-  simple.style.letterSpacing = '';
   simple.style.clipPath = '';
-  simple.style.textShadow = '';
-  simple.style.webkitTextStroke = '';
-  simple.style.color = '';
   simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
   simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
   simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
@@ -524,39 +324,39 @@ function renderEndcard(t) {
   if (t < OUT_AT || t >= CYCLE) {
     overlay.style.display = 'none';
     endLaugh = false;
-    endPop = false;
     return;
   }
   overlay.style.display = '';
   const s = t - OUT_AT;
-  overlay.style.opacity = '1';   // instant reveal on pure black
+
+  // the frame-level arrival: the end card animates IN per the transition
+  // (for sim transitions it arrives while the card layer leaves — the two
+  // frames tile, never overlap)
+  const inDur = X.inDur || X.d;
+  const q = easeInOutSine(inP(s, inDur));
+  overlay.style.opacity = '1';
+  overlay.style.transform = 'none';
+  overlay.style.filter = 'none';
+  overlay.style.zIndex = X === TRX['slide-over'] ? '7' : '';
+  if (X.in) X.in(overlay, q);
 
   const stage = overlay.getBoundingClientRect();
-  let shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
-  if (T.mas === 'nodrift') shift = 1;
+  const shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
   const w = bot.offsetWidth, h = bot.offsetHeight;
-  let scale = 1.22;
-  if (T.mas === 'zoom') scale = 1.22 + 0.08 * (1 - clamp(s / 0.7, 0, 1));
-  const rise = T.mas === 'rise' ? (1 - clamp(s / 0.6, 0, 1)) * 14 : 0;
+  const scale = 1.22;
   const wordW = word.offsetWidth;
   const total = w * scale + LOGO_GAP + wordW;
   const left = (stage.width - total) / 2;
   const midY = stage.height / 2;
   const logoX = stage.width / 2 + (left + (w * scale) / 2 - stage.width / 2) * shift;
   bot.style.transform =
-    `translate(${(logoX - w / 2).toFixed(1)}px, ${(midY - h / 2 + rise).toFixed(1)}px) scale(${scale.toFixed(3)})`;
-  const wordO = T.mas === 'wordfirst' ? clamp((s - 0.2) / 0.5, 0, 1) : shift;
-  word.style.opacity = wordO.toFixed(3);
-  word.style.filter = wordO < 1 ? `blur(${(6 * (1 - wordO)).toFixed(1)}px)` : 'none';
+    `translate(${(logoX - w / 2).toFixed(1)}px, ${(midY - h / 2).toFixed(1)}px) scale(${scale.toFixed(3)})`;
+  word.style.opacity = shift.toFixed(3);
+  word.style.filter = shift < 1 ? `blur(${(6 * (1 - shift)).toFixed(1)}px)` : 'none';
   word.style.transform =
     `translate(${(left + w * scale + LOGO_GAP + 20 * (1 - shift)).toFixed(1)}px, -50%)`;
 
   if (endBot) {
-    // the mascot pops as the text finishes leaving (variants marked pop)
-    if (T.mas === 'pop' && !endPop) {
-      endBot.excitedUntil = performance.now() + 600;
-      endPop = true;
-    }
     const laughing = s >= SETTLE && ((s - SETTLE) % LAUGH_PERIOD) < LAUGH_DUR;
     Object.assign(endBot.expr, laughing
       ? { eyeL: 'happy', eyeR: 'happy', mouth: 'grin' }
