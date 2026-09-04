@@ -201,22 +201,33 @@ function renderChat(t) {
 
 /* ---- the punch cards ---- */
 
+/* the second card crossfades into the end card: it holds its 1.1s, then
+   dissolves over CARD2_FADE while the end card fades in beneath it */
+const CARD2_FADE = 0.5;
+
 function renderCards(t) {
   const simple = document.getElementById('simple');
-  let card = null, since = -1;
+  let card = null, since = -1, fading = false;
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
-  } else if (t >= CARD2_AT && t < CARDS_END) {
+  } else if (t >= CARD2_AT && t < CARDS_END + CARD2_FADE) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
+    fading = t >= CARDS_END;
   }
   if (card === null) {
     simple.style.opacity = '0';
     return;
   }
   simple.textContent = card;
-  simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
-  simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
-  simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
+  simple.style.opacity = fading
+    ? clamp(1 - (t - CARDS_END) / CARD2_FADE, 0, 1).toFixed(3)
+    : easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
+  simple.style.transform = fading
+    ? 'none'
+    : `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
+  simple.style.filter = !fading && since < 0.35
+    ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)`
+    : 'none';
 }
 
 /* ---- the end card (same as the previous animation) ---- */

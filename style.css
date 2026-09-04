@@ -198,12 +198,10 @@ body {
   opacity: 0; will-change: opacity, transform, filter;
 }
 
-/* the end card */
+/* the end card: PURE black (user ask — was 90% alpha over the blurred wall) */
 .endcard {
   position: absolute; inset: 0; z-index: 5;
-  background: color-mix(in srgb, var(--bg) 90%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: var(--bg);
   will-change: opacity;
 }
 .endcard-bot {
