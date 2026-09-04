@@ -112,12 +112,13 @@ const BASE_TRX = {
 const TRX = { ...BASE_TRX, ...EXTRA_TRX };
 const TRANSITIONS = Object.keys(TRX).map((name) => ({ name, leave: name }));
 const DEFAULT_TR = 'wipe';   // pinned default (user pick)
+const pickTR = (name) => ({ name, leave: name });
 const T = (() => {
   const want = Q.get('tr');
-  if (!want) return TRX[DEFAULT_TR];
+  if (!want) return pickTR(DEFAULT_TR);
   const byIdx = parseInt(want, 10);
   if (Number.isFinite(byIdx) && TRANSITIONS[byIdx - 1]) return TRANSITIONS[byIdx - 1];
-  return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || TRX[DEFAULT_TR];
+  return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || pickTR(DEFAULT_TR);
 })();
 
 /* CLEAN, never a crossfade (user ask): sim transitions tile the two frames
