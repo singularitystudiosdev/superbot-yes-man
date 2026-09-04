@@ -110,6 +110,8 @@ body {
   padding: 0 4px;
   opacity: 0;
 }
+/* the pasted link renders BLUE in the bar and the bubble (user ask) */
+.link { color: #6cb0ff; }
 /* the user bubble is BLUE in the real thing (verified on chatgpt.com,
    2026-09-03: the sent message renders as a royal-blue bubble) — the
    bubble rules below pick it up via --gpt-bubble */

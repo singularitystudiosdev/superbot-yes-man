@@ -30,7 +30,7 @@ const SPEED = 1.15;          // the whole show plays ~15% faster (family style)
 
 /* ---- scene 1: the attach, the typing + the send ---- */
 const ATTACH_AT = 0.55, ATTACH_LEN = 0.35;  // the + pulses
-const PASTE_AT = 0.9;                       // mywebsite.com lands as text (a paste)
+const PASTE_AT = 0.9;                       // carbkiller.com lands as text (a paste)
 const TYPE_AT = 1.4, TYPE_DUR = 1.5;        // "Does my website look good?"
 const PRESS_AT = 3.2;                       // enter is pressed (no cursor yet)
 const USER_MSG_AT = 3.3;                    // the user bubble pops into the thread
@@ -56,11 +56,11 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 0.9;         // AND YOU LIKE THAT?
+const CARD2_AT = CARD1_END, CARD2_LEN = 2.0;         // AND YOU LIKE THAT? (holds)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the /superbot take (a fresh conversation) ---- */
-const SB_TYPE_AT = CARDS_END + 0.4, SB_TYPE_DUR = 1.3;
+const SB_TYPE_AT = CARDS_END + 0.15, SB_TYPE_DUR = 1.3;   // no blackout after the card
 const SB_PRESS = SB_TYPE_AT + SB_TYPE_DUR + 0.45;
 const SB_MSG_AT = SB_PRESS + 0.1;
 const SB_THINK_AT = SB_MSG_AT + 0.15, SB_THINK_LEN = 0.5;
@@ -104,13 +104,16 @@ const VERDICT_SEGS = [
   { t: 'burning $50 a month', frag: 2 },
   { t: ' to hold the domain.' },
 ];
-const REST_AT = NO_AT + NO_DUR + 0.15, REST_DUR = 1.3;
-const VERDICT_CHARS = VERDICT_SEGS.reduce((n, s) => n + s.t.length, 0) - 3; // minus "No."
-/* the three punches, in turn (the "Black." machinery, one target each) */
-const PUNCH_IN = 0.2, PUNCH_HOLD = num('hold', 0.65), PUNCH_OUT = 0.45, EMPH_MAX = num('emph', 5);
+/* the single punch (the "Black." machinery): a beat after "No." lands the
+   camera pushes ALL the way in — black frame, white "No.", nothing else
+   visible — holds, and relaxes clean. The rest of the verdict streams only
+   after the zoom-out has settled. */
+const PUNCH_IN = 0.25, PUNCH_HOLD = num('hold', 1.2), PUNCH_OUT = 0.6, EMPH_MAX = num('emph', 7);
+const PUNCH_AT = NO_AT + NO_DUR + 0.55;
 const PUNCH_LEN = PUNCH_IN + PUNCH_HOLD + PUNCH_OUT;
-const PUNCH_AT = [0, 1, 2].map((i) => REST_AT + REST_DUR + 0.35 + i * (PUNCH_LEN + 0.05));
-const PUNCH_END = PUNCH_AT[2] + PUNCH_LEN;
+const PUNCH_END = PUNCH_AT + PUNCH_LEN;
+const REST_AT = PUNCH_END + 0.15, REST_DUR = 1.3;
+const VERDICT_CHARS = VERDICT_SEGS.reduce((n, s) => n + s.t.length, 0) - 3; // minus "No."
 
 /* ---- scene 6: the recommendation + the three attached campaigns ---- */
 const REC_AT = PUNCH_END + 0.3, REC_DUR = 1.5;
@@ -139,7 +142,7 @@ const CYCLE = END_AT + END_LEN + 1.8;
 
 const Q1 = 'Does my website look good?';
 const SB_PREFIX = '/superbot';
-const SITE = 'mywebsite.com';
+const SITE = 'carbkiller.com';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const easeOutQuint = (p) => 1 - Math.pow(1 - p, 5);
@@ -162,8 +165,8 @@ function renderChrome(t) {
    pre-rendered to looping webm (assets/camp-*.webm) and played in their
    cards — not text rebuilt from t (user ask: not just text). ---- */
 
-const CAMP_TITLE = ['campaign 01 · favorite color', 'campaign 02 · claude code', 'campaign 03 · yes man'];
-const CAMP_SRC = ['assets/camp-favorite-color.webm', 'assets/camp-claude-code.webm', 'assets/camp-yes-man.webm'];
+const CAMP_TITLE = ['campaign 01 · before / after', 'campaign 02 · the scale', 'campaign 03 · attack ad'];
+const CAMP_SRC = ['assets/camp-01.webm', 'assets/camp-02.webm', 'assets/camp-03.webm'];
 
 /* ---- the chat interface ---- */
 
@@ -244,7 +247,9 @@ function renderChat(t) {
       `inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), ` +
       `0 0 0 ${(12 * ring).toFixed(1)}px color-mix(in srgb, var(--accent) ${(70 * (1 - ring)).toFixed(0)}%, transparent)`;
   }
-  inputText.textContent = txt;
+  inputText.innerHTML = take2
+    ? esc(txt)
+    : esc(txt).replace(esc(SITE), `<span class="link">${esc(SITE)}</span>`);
   placeholder.style.display = (txt.length === 0 && !chipLive) ? '' : 'none';
   caret.style.opacity = (Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15).toFixed(2);
   caret.style.display = (txt.length > 0 || chipLive) ? '' : 'none';
@@ -255,7 +260,7 @@ function renderChat(t) {
   const mp = t - msgAt;
   msgUser.innerHTML = take2
     ? `<span class="msg-chip">/superbot</span> ${Q1}`
-    : `${SITE} ${Q1}`;
+    : `<span class="link">${SITE}</span> ${Q1}`;
   msgUser.style.opacity = mp > 0 ? inP(mp, 0.18).toFixed(3) : '0';
   msgUser.style.transform = mp > 0
     ? `scale(${(0.94 + 0.06 * easeOutBack(inP(mp, 0.28))).toFixed(3)})`
@@ -272,8 +277,7 @@ function renderChat(t) {
   // take 1: the opener, then the accelerating glaze; the wall grows into
   // the cut. take 2: scrape + audit log, then the verdict (fragments punch
   // in turn), the recommendation, the three attached campaigns.
-  const punchI = PUNCH_AT.findIndex((p, i) => t >= p && t < p + PUNCH_LEN);
-  const emphActive = punchI >= 0;
+  const emphActive = t >= PUNCH_AT && t < PUNCH_END;
   const rsp = t - (take2 ? NO_AT : RESP_AT);
   if (rsp <= 0 && !(take2 && t >= SCRAPE_AT)) {
     msgAi.textContent = '';
@@ -369,15 +373,13 @@ function renderChat(t) {
   //   "No." once, then the three verdict fragments in turn —
   chat.style.transform = 'none';
   if (emphActive) {
-    const i = punchI;
-    const p0 = PUNCH_AT[i];
+    const p0 = PUNCH_AT;
     const e = t < p0 + PUNCH_IN ? easeOutQuint(inP(t - p0, PUNCH_IN))
       : t < p0 + PUNCH_IN + PUNCH_HOLD ? 1
       : 1 - easeInOutSine(inP(t - p0 - PUNCH_IN - PUNCH_HOLD, PUNCH_OUT));
-    // "No." punches on its own span; the fragments on theirs
-    const target = i === 0
-      ? msgAi.querySelector('.sb-no')
-      : msgAi.querySelector(`[data-frag="${i - 1}"]`);
+    // the word alone: the rest of the verdict has not streamed yet, the
+    // bubble and the composer fade, and the camera pushes clean
+    const target = msgAi.querySelector('.sb-no');
     if (target) {
       const range = document.createRange();
       range.selectNodeContents(target);
