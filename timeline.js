@@ -50,7 +50,7 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 0.9;         // AND YOU LIKE THAT? (0.9s, then INSTANT to the outro)
+const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then collapses into the mascot)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the superbot.gg end card, straight from the card ---- */
@@ -88,6 +88,7 @@ function renderChrome(t) {
 let inited = false;
 let endBot = null;
 let endLaugh = false;
+let endPop = false;
 
 function initChat() {
   if (inited) return;
@@ -200,21 +201,36 @@ function renderChat(t) {
 }
 
 
-/* ---- the punch cards: hard cuts, pure black, instant to the outro ---- */
+/* ---- the punch cards: hard cuts, pure black. The second card collapses
+   into the superbot mascot: it holds, then the text shrinks into the point
+   where the mascot is sitting (center screen) while the card's own
+   background turns transparent so the outro shows through — the mascot pops
+   on the landing (user ask: collapse into the mascot, clean). ---- */
+const COLLAPSE = 0.5;
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
-  let card = null, since = -1;
+  let card = null, since = -1, collapsing = false;
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
-  } else if (t >= CARD2_AT && t < CARDS_END) {
+  } else if (t >= CARD2_AT && t < CARDS_END + COLLAPSE) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
+    collapsing = t >= CARDS_END;
   }
   if (card === null) {
     simple.style.opacity = '0';
     return;
   }
   simple.textContent = card;
+  if (collapsing) {
+    const p = inP(t - CARDS_END, COLLAPSE);
+    simple.style.background = 'transparent';   // the outro shows through
+    simple.style.opacity = (1 - easeInOutSine(clamp((p - 0.7) / 0.3, 0, 1))).toFixed(3);
+    simple.style.transform = `scale(${(1 - 0.94 * easeInOutSine(p)).toFixed(4)})`;
+    simple.style.filter = 'none';
+    return;
+  }
+  simple.style.background = '';
   simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
   simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
   simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
@@ -229,11 +245,17 @@ function renderEndcard(t) {
   if (t < END_AT || t >= CYCLE) {
     overlay.style.display = 'none';
     endLaugh = false;
+    endPop = false;
     return;
   }
   overlay.style.display = '';
   const s = t - END_AT;
   overlay.style.opacity = '1';   // INSTANT cut from the card: pure black, no fade
+  // the mascot pops as the card text lands in it (COLLAPSE end)
+  if (endBot && s >= COLLAPSE && !endPop) {
+    endBot.excitedUntil = performance.now() + 600;
+    endPop = true;
+  }
 
   const stage = overlay.getBoundingClientRect();
   const shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));

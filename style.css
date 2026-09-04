@@ -188,7 +188,7 @@ body {
 
 /* the punch cards */
 .simple {
-  position: absolute; inset: 0; z-index: 5;
+  position: absolute; inset: 0; z-index: 6;   /* above the end card so the collapsing text lands over the mascot */
   display: grid; place-items: center;
   background: var(--bg);
   font-family: var(--font-ui);
