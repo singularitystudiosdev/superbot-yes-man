@@ -67,6 +67,7 @@ const CARD3_LEN = 1.9;
 const CARDS_END = VARIANT === 'feedback' ? CARD3_AT + CARD3_LEN : CARD2_AT + CARD2_LEN;
 const TAG_TEXT = VARIANT === 'pros' ? '“for the pros”'
              : VARIANT === 'getreal' ? 'get real'
+             : VARIANT === 'emailpros' ? '“For the Pros”'
              : VARIANT === 'feedbacktag' || VARIANT === 'slides' || VARIANT === 'email'
                ? 'feedback isn\'t for everyone'
              : '';
@@ -161,6 +162,7 @@ const SCENES = {
   email:  { site: 'mail.google.com/mail/u/0/#inbox/F3kx2q9',
             q: 'Is this email good?' },
 };
+SCENES.emailpros = SCENES.email;   // same gmail scene, the "For the Pros" endcard tag
 const SCENE = SCENES[VARIANT];
 const Q1 = SCENE ? SCENE.q : 'Does my website look good?';
 const SITE = SCENE ? SCENE.site : 'carbkiller.com';
@@ -442,7 +444,7 @@ initChat();
 const tag = document.getElementById('endTag');
 if (TAG_TEXT) {
   tag.textContent = TAG_TEXT;
-  tag.classList.toggle('italic', VARIANT === 'pros');      // quoted line reads as a pull-quote
+  tag.classList.toggle('italic', VARIANT === 'pros' || VARIANT === 'emailpros');   // quoted line reads as a pull-quote
   tag.classList.toggle('long', TAG_TEXT.length > 16);      // longer subline sits a step smaller
 } else tag.style.display = 'none';
 
