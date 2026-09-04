@@ -1,21 +1,14 @@
-// The pitch, "yes man" — a deterministic seekable render, same anatomy as
-// the "favorite color" spot. The user pastes mywebsite.com (plain text —
-// verified 1:1 against chatgpt.com, 2026-09-03: a link is never a chip),
-// types "Does my website look good?" and hits enter; the bar CLEARS like
-// the real thing and the bubble holds what was sent. The llm streams its
-// opener — then a glazing tirade with periodic 😍✨💖 emojis that keeps
-// accelerating and NEVER stops, the wall growing into the hard cut. Cards:
-// "LLMs are made to agree with you" (2.1s) — cut — "AND YOU LIKE THAT?"
-// (0.9s). Then the bar takes "/superbot Does my website look good?" (the
-// site's cmd-glow chip, ⚡ bolt and breathing glow verbatim) and superbot
-// scrapes aggressively, audits, and answers: "No." — the camera punches in,
-// then punches the fragments: "lacks novelty" · "no monetization" ·
-// "burning $50 a month" — then the recommendation: take market share with
-// attack ads framed as public side-by-side comparisons — and attaches 3 ad
-// campaigns: REAL CLIPS of the family's own spots looping in their cards
-// (pre-rendered webm). The cursor glides in for the about-to-click beat,
-// hard cut: "WE LIKE WINNING", then the superbot.gg end card (mascot +
-// wordmark, laugh cycle).
+// The pitch, "yes man" — TRUNCATED at AND YOU LIKE THAT?: that card holds
+// 1.1s and the show cuts straight to the superbot.gg end card (mascot +
+// wordmark, laugh cycle — same as the previous animation). Same deterministic
+// seekable anatomy as the "favorite color" spot. The user pastes
+// carbkiller.com (plain text — verified 1:1 against chatgpt.com, 2026-09-03:
+// a link is never a chip), types "Does my website look good?" and hits enter;
+// the bar CLEARS like the real thing and the bubble holds what was sent. The
+// llm streams its opener — then a glazing tirade with periodic 😍✨💖 emojis
+// that keeps accelerating and NEVER stops, the wall growing into the hard
+// cut. Cards: "LLMs are made to agree with you" (2.1s) — cut —
+// "AND YOU LIKE THAT?" (1.1s) — straight to the outro.
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -56,96 +49,11 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 2.0;         // AND YOU LIKE THAT? (holds)
+const CARD2_AT = CARD1_END, CARD2_LEN = 1.1;         // AND YOU LIKE THAT? (holds, then straight to the outro)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
-/* ---- scene 3: the /superbot take (a fresh conversation) ---- */
-const SB_TYPE_AT = CARDS_END + 0.02, SB_TYPE_DUR = 1.3;   // no blackout after the card
-const SB_PRESS = SB_TYPE_AT + SB_TYPE_DUR + 0.45;
-const SB_MSG_AT = SB_PRESS + 0.1;
-const SB_THINK_AT = SB_MSG_AT + 0.15, SB_THINK_LEN = 0.5;
-
-/* ---- scene 4: the aggressive scrape + audit — one mono line per fetch ---- */
-const SCRAPE_LINES = [
-  ['producthunt.com', 200, 212], ['crunchbase.com', 200, 305], ['ycombinator.com', 200, 198],
-  ['news.ycombinator.com', 200, 143], ['reddit.com/r/startups', 200, 221], ['reddit.com/r/SaaS', 200, 208],
-  ['github.com/trending', 200, 187], ['indiegogo.com', 403, 0], ['kickstarter.com', 200, 265],
-  ['gust.com', 200, 171], ['angellist.com', 301, 88], ['linkedin.com/companies', 999, 0],
-  ['meta.com/ads/library', 200, 240], ['library.tiktok.com/ads', 200, 251], ['google.com/transparency/ads', 200, 228],
-  ['x.com/search', 429, 0], ['g2.com/categories', 200, 196], ['capterra.com/categories', 200, 205],
-  ['similarweb.com', 200, 312], ['semrush.com', 200, 288], ['news.google.com', 200, 133],
-  ['sec.gov/edgar', 200, 262], ['wikipedia.org', 200, 121], ['builtwith.com', 200, 199],
-  ['pagespeed.web.dev', 200, 341], ['httparchive.org', 200, 274], ['crunchbase.com/funding', 200, 233],
-  ['pitchbook.com', 401, 0], ['statista.com', 403, 0], ['explodingtopics.com', 200, 167],
-  ['trends.google.com', 200, 154], ['sensortower.com', 200, 221], ['wayback.archive.org', 200, 296],
-  ['appstorespy.com', 200, 189], ['oauth2/refresh · 12 jar pools', 200, 44], ['robots.txt · ignored', 200, 8],
-];
-const SCRAPE_AT = SB_THINK_AT + SB_THINK_LEN + 0.1, SCRAPE_LEN = 2.2;
-const SCRAPE_STEP = SCRAPE_LEN / SCRAPE_LINES.length;
-const SCRAPE_END = SCRAPE_AT + SCRAPE_LEN;
-const scrapeCount = (t) => Math.max(0, Math.min(SCRAPE_LINES.length, Math.floor((t - SCRAPE_AT) / SCRAPE_STEP)));
-/* the audit: three quiet lines that set up the verdict */
-const AUDIT_LINES = [
-  ['lighthouse audit', '38 / 100 · vibe-coded CSS', ''], ['css scan', '2,417 utility-soup rules', ''],
-  ['revenue check', 'none found', ''],
-];
-const AUDIT_AT = SCRAPE_END + 0.05, AUDIT_STEP = 0.35;
-const AUDIT_END = AUDIT_AT + AUDIT_LINES.length * AUDIT_STEP;
-
-/* ---- scene 5: the verdict — "No." punches alone, then the defect list:
-   everything wrong with the site, one actionable fix per item (every fix
-   names a SPECIFIC thing on the real carbkiller.com — checked against the
-   live page, 2026-09-03). One item embeds a REAL screenshot of the
-   "CARB BLOCKER" video section (assets/section-video.png, captured from
-   the live site) with the AI-slop verdict. ---- */
-const NO_AT = AUDIT_END + 0.2, NO_DUR = 0.3;
-/* the single punch (the "Black." machinery): a beat after "No." lands the
-   camera pushes ALL the way in — black frame, white "No.", nothing else
-   visible — holds, and relaxes clean. The list only starts once the
-   zoom-out has settled. */
-const PUNCH_IN = 0.25, PUNCH_HOLD = num('hold', 1.2), PUNCH_OUT = 0.6, EMPH_MAX = num('emph', 7);
-const PUNCH_AT = NO_AT + NO_DUR + 0.55;
-const PUNCH_LEN = PUNCH_IN + PUNCH_HOLD + PUNCH_OUT;
-const PUNCH_END = PUNCH_AT + PUNCH_LEN;
-const DEFECTS = [
-  {
-    p: 'The cookie banner covers your buy button.',
-    f: 'Dismiss it for first-time visitors — your $34.95 "Add to Cart" is hidden behind "We value your privacy" right now.',
-  },
-  {
-    p: 'The overall design appears like AI slop.',
-    shot: true,
-    f: 'Keep the two badges that actually sell (Keto, 3rd-Party Lab Tested) and reshoot the hand-written "CARB BLOCKER" clip — seven clip-art badges read 2012.',
-  },
-  {
-    p: 'The first screen asks for nothing.',
-    f: 'Cut the hero to one line — "Less hunger, more weight loss." — and make "Add to Cart" the only button above the fold.',
-  },
-  {
-    p: 'There is no way in but the cart.',
-    f: 'Add a 10%-off email capture and a one-page checkout — paid traffic needs a list to retarget or every campaign leaks.',
-  },
-];
-const LIST_AT = PUNCH_END + 0.2, LIST_STEP = 1.25;
-const LIST_END = LIST_AT + DEFECTS.length * LIST_STEP;
-
-/* ---- scene 6: the recommendation + the three attached campaigns ---- */
-const REC_AT = LIST_END + 0.5, REC_DUR = 1.5;
-const REC = 'I recommend you aggressively take market share from a competing company — attack ads, framed properly: public side-by-side comparisons, their numbers next to yours.';
-const CAMP_LINE_AT = REC_AT + REC_DUR + 0.25, CAMP_LINE_DUR = 0.6;
-const CAMP_LINE = 'Attaching 3 campaigns.';
-const CAMP1_AT = CAMP_LINE_AT + CAMP_LINE_DUR + 0.25, CAMP_STEP = 0.3;
-
-/* ---- scene 7: the cursor, about to click campaign 03 ---- */
-const CURSOR_AT = CAMP1_AT + 2 * CAMP_STEP + 0.9, CURSOR_DUR = 1.1;
-const CURSOR_HOLD = 0.45;
-
-/* ---- scene 8: WE LIKE WINNING. ---- */
-const CARDW_AT = CURSOR_AT + CURSOR_DUR + CURSOR_HOLD + 0.15, CARDW_LEN = 1.7;
-const CARDW_END = CARDW_AT + CARDW_LEN;
-
-/* ---- scene 9: the superbot.gg end card (same as the previous animation) ---- */
-const END_AT = CARDW_END + 0.4;
+/* ---- scene 3: the superbot.gg end card, straight from the card ---- */
+const END_AT = CARDS_END;
 const DRIFT_AT = 0.7;
 const SETTLE = DRIFT_AT + 1.0;
 const LAUGH_PERIOD = 2.4;
@@ -155,7 +63,6 @@ const END_LEN = 4.8;
 const CYCLE = END_AT + END_LEN + 1.8;
 
 const Q1 = 'Does my website look good?';
-const SB_PREFIX = '/superbot';
 const SITE = 'carbkiller.com';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -175,13 +82,6 @@ function renderChrome(t) {
   veil.style.opacity = v.toFixed(3);
 }
 
-/* ---- the attached campaigns: REAL CLIPS of the family's own ads,
-   pre-rendered to looping webm (assets/camp-*.webm) and played in their
-   cards — not text rebuilt from t (user ask: not just text). ---- */
-
-const CAMP_TITLE = ['campaign 01 · before / after', 'campaign 02 · the scale', 'campaign 03 · attack ad'];
-const CAMP_SRC = ['assets/camp-01.webm', 'assets/camp-02.webm', 'assets/camp-03.webm'];
-
 /* ---- the chat interface ---- */
 
 let inited = false;
@@ -198,9 +98,8 @@ function initChat() {
   }
 }
 
-/* a card window? (the three punch cards; the chat hides under them) */
-const inCard = (t) =>
-  (t >= CARD1_AT && t < CARDS_END) || (t >= CARDW_AT && t < CARDW_END);
+/* a card window? (the two punch cards; the chat hides under them) */
+const inCard = (t) => t >= CARD1_AT && t < CARDS_END;
 
 function renderChat(t) {
   const chat = document.getElementById('chatui');
@@ -208,7 +107,6 @@ function renderChat(t) {
   const msgArea = document.getElementById('msgArea');
   const pill = document.getElementById('pill');
   const inputText = document.getElementById('inputText');
-  const chip = document.getElementById('inputChip');
   const plus = document.getElementById('plusIc');
   const caret = document.getElementById('caret');
   const placeholder = document.getElementById('placeholder');
@@ -216,16 +114,13 @@ function renderChat(t) {
   const msgAi = document.getElementById('msgAi');
   const dots = document.getElementById('typingDots');
   const suggestions = document.getElementById('suggestions');
-  const cursor = document.getElementById('cursor');
 
-  const live = !inCard(t) && t < CARDW_END;
+  const live = !inCard(t);
   chat.style.display = live ? '' : 'none';
   if (!live) return;
 
-  const take2 = t >= CARDS_END; // after the cards, it's the /superbot take
-
   // — the idle chrome: home state swaps to the conversation state —
-  const convo = take2 || t >= USER_MSG_AT;
+  const convo = t >= USER_MSG_AT;
   chat.classList.toggle('home', !convo);
   head.style.opacity = convo ? '0' : '1';
   head.style.filter = convo ? 'blur(3px)' : 'none';
@@ -238,203 +133,71 @@ function renderChat(t) {
 
   // take 1: the URL lands as one chunk (a paste) and the question types
   // after it — a link is PLAIN TEXT in the real composer (verified 1:1 on
-  // chatgpt.com, 2026-09-03). take 2: the /superbot chip + the question.
+  // chatgpt.com, 2026-09-03: a link is plain text, never a chip.
   let txt = '';
-  if (take2) {
-    txt = Q1.slice(0, Math.ceil(inP(t - SB_TYPE_AT, SB_TYPE_DUR) * Q1.length));
-  } else {
-    const pasted = t >= PASTE_AT ? `${SITE} ` : '';
-    txt = pasted + Q1.slice(0, Math.ceil(inP(t - TYPE_AT, TYPE_DUR) * Q1.length));
-  }
-  // BOTH takes clear the bar the moment their message pops — like the real
-  // thing: what you sent lives in the thread, not the composer
-  const sent = t >= (take2 ? SB_MSG_AT : USER_MSG_AT);
+  const pasted = t >= PASTE_AT ? `${SITE} ` : '';
+  txt = pasted + Q1.slice(0, Math.ceil(inP(t - TYPE_AT, TYPE_DUR) * Q1.length));
+  // the bar clears the moment the message pops — like the real thing: what
+  // you sent lives in the thread, not the composer
+  const sent = t >= USER_MSG_AT;
   if (sent) txt = '';
-  const chipLive = take2 && !sent;
-  chip.style.display = chipLive ? 'inline-block' : 'none';
-  if (chipLive) {
-    chip.textContent = '/superbot';
-    // the site's cmd-pop, deterministic from t: a one-shot ring spreads
-    // 12px and fades over 900ms as the chip lands
-    const ring = inP(t - SB_TYPE_AT, 0.9);
-    chip.style.boxShadow =
-      `inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), ` +
-      `0 0 0 ${(12 * ring).toFixed(1)}px color-mix(in srgb, var(--accent) ${(70 * (1 - ring)).toFixed(0)}%, transparent)`;
-  }
-  inputText.innerHTML = take2
-    ? esc(txt)
-    : esc(txt).replace(esc(SITE), `<span class="link">${esc(SITE)}</span>`);
-  placeholder.style.display = (txt.length === 0 && !chipLive) ? '' : 'none';
+  inputText.innerHTML = esc(txt).replace(esc(SITE), `<span class="link">${esc(SITE)}</span>`);
+  placeholder.style.display = txt.length === 0 ? '' : 'none';
   caret.style.opacity = (Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15).toFixed(2);
-  caret.style.display = (txt.length > 0 || chipLive) ? '' : 'none';
+  caret.style.display = txt.length > 0 ? '' : 'none';
 
   // — the message area —
-  const msgAt = take2 ? SB_MSG_AT : USER_MSG_AT;
-  const thinkAt = take2 ? SB_THINK_AT : THINK_AT;
+  const msgAt = USER_MSG_AT;
+  const thinkAt = THINK_AT;
   const mp = t - msgAt;
-  msgUser.innerHTML = take2
-    ? `<span class="msg-chip">/superbot</span> ${Q1}`
-    : `<span class="link">${SITE}</span> ${Q1}`;
+  msgUser.innerHTML = `<span class="link">${SITE}</span> ${Q1}`;
   msgUser.style.opacity = mp > 0 ? inP(mp, 0.18).toFixed(3) : '0';
   msgUser.style.transform = mp > 0
     ? `scale(${(0.94 + 0.06 * easeOutBack(inP(mp, 0.28))).toFixed(3)})`
     : 'none';
   const think = t - thinkAt;
-  const thinking = think > 0 && think < (take2 ? SB_THINK_LEN : THINK_LEN);
+  const thinking = think > 0 && think < THINK_LEN;
   dots.style.display = thinking ? 'flex' : 'none';
   dots.querySelectorAll('i').forEach((d, i) => {
     d.style.opacity = (0.3 + 0.7 * Math.max(0, Math.sin(t * 7 - i * 0.9))).toFixed(2);
     d.style.transform = `translateY(${(-3 * Math.max(0, Math.sin(t * 7 - i * 0.9))).toFixed(2)}px)`;
   });
 
-  // — the response —
-  // take 1: the opener, then the accelerating glaze; the wall grows into
-  // the cut. take 2: scrape + audit log, then the verdict (fragments punch
-  // in turn), the recommendation, the three attached campaigns.
-  const emphActive = t >= PUNCH_AT && t < PUNCH_END;
-  const rsp = t - (take2 ? NO_AT : RESP_AT);
-  if (rsp <= 0 && !(take2 && t >= SCRAPE_AT)) {
+  // — the response: the opener, then the accelerating glaze; the wall
+  //   grows into the cut —
+  const rsp = t - RESP_AT;
+  if (rsp <= 0) {
     msgAi.textContent = '';
     msgAi.style.opacity = '0';
     msgArea.scrollTop = 0;
   } else {
     msgAi.style.opacity = '1';
-    if (take2) {
-      // the scrape + audit log, collapsing the moment the verdict begins
-      if (t < NO_AT) {
-        let lines = SCRAPE_LINES.slice(0, scrapeCount(t)).map(([host, code, ms]) => {
-          const ok = code === 200;
-          const st = ok ? `<span class="ok">${code}</span>` : `<span class="blocked">${code} blocked</span>`;
-          const dur = ms ? ` · <span class="ms">${ms}ms</span>` : '';
-          return `<span class="sl">▸ GET <span class="host">${host}</span> … ${st}${dur}</span>`;
-        });
-        if (t >= AUDIT_AT) {
-          const k = Math.min(AUDIT_LINES.length, Math.floor((t - AUDIT_AT) / AUDIT_STEP) + 1);
-          lines = lines.concat(AUDIT_LINES.slice(0, k).map(([a, b]) =>
-            `<span class="sl">▸ <span class="host">${a}</span> … <span class="blocked">${b}</span></span>`));
-        }
-        msgAi.innerHTML = `<span class="scrape">${lines.join('')}</span>`;
-        msgArea.scrollTop = 1e6;                        // follow the descent
+    msgAi.textContent = t < GLAZE_AT
+      ? REPLY.slice(0, Math.ceil(inP(rsp, RESP_DUR) * REPLY.length))
+      : REPLY + GLAZE.slice(0, t < GLAZE_END ? Math.min(GLAZE.length, glazeChars(t - GLAZE_AT)) : GLAZE.length);
+    msgArea.scrollTop = 1e6;                      // follow the glaze
+    // the wall: the stream grows until it fills the frame top-to-bottom
+    // and pushes the composer off-screen, holding into the cut
+    const wallP = t <= WALL_AT ? 0 : Math.pow(inP(t - WALL_AT, GLAZE_END - WALL_AT), 1.5);
+    if (wallP > 0) {
+      msgArea.style.flex = `0 0 ${(56 + 44 * wallP).toFixed(1)}%`;
+      msgArea.style.maxHeight = 'none';
+      if (wallP >= 1) {
+        chat.style.justifyContent = 'flex-start';
+        chat.style.paddingBottom = '0px';
       } else {
-        // the verdict: "No." alone, then the defect list — one actionable
-        // fix per item; item 02 embeds the real site screenshot
-        const no = 'No.'.slice(0, Math.ceil(inP(t - NO_AT, NO_DUR) * 3));
-        let html = `<span class="sb-no">${esc(no)}</span>`;
-        if (t >= LIST_AT) {
-          const k = Math.min(DEFECTS.length, Math.floor((t - LIST_AT) / LIST_STEP) + 1);
-          html += `<span class="defects">` + DEFECTS.slice(0, k).map((d, i) => {
-            const ip = inP(t - (LIST_AT + i * LIST_STEP), 0.3);
-            const shot = d.shot
-              ? `<div class="li-shot"><img src="assets/section-video.png" alt="carbkiller.com · the CARB BLOCKER video section" onload="document.getElementById('msgArea').scrollTop=1e6"></div>`
-              : '';
-            return `<div class="li" style="opacity:${ip.toFixed(2)};transform:translateY(${(7 * (1 - ip)).toFixed(1)}px)">` +
-              `<div class="li-p">${i + 1}. ${esc(d.p)}</div>${shot}` +
-              `<div class="li-f">→ ${esc(d.f)}</div></div>`;
-          }).join('') + `</span>`;
-        }
-        msgAi.innerHTML = html;
-        // the recommendation + the three attached campaigns + the cursor
-        if (t >= REC_AT) {
-          const rc = REC.slice(0, Math.ceil(inP(t - REC_AT, REC_DUR) * REC.length));
-          msgAi.innerHTML += `<span class="sb-pivot">${esc(rc)}</span>`;
-        }
-        if (t >= CAMP_LINE_AT) {
-          const cl = CAMP_LINE.slice(0, Math.ceil(inP(t - CAMP_LINE_AT, CAMP_LINE_DUR) * CAMP_LINE.length));
-          msgAi.innerHTML += `<span class="camp-note">${esc(cl)}</span>`;
-          const cards = CAMP_TITLE.map((title, i) => {
-            const at = CAMP1_AT + i * CAMP_STEP;
-            const cp = t < at ? 0 : inP(t - at, 0.22);   // shells reserved, pop by opacity
-            const hovered = i === 2 && t >= CURSOR_AT + CURSOR_DUR;
-            return `<div class="camp${hovered ? ' hover' : ''}" data-camp="${i}" style="opacity:${cp.toFixed(2)};transform:translateY(${(8 * (1 - cp)).toFixed(1)}px)">` +
-              `<div class="camp-bar"><b>${title.split(' · ')[0]}</b> · ${title.split(' · ')[1]}</div>` +
-              `<video src="${CAMP_SRC[i]}" autoplay muted loop playsinline></video></div>`;
-          }).join('');
-          if (cards) msgAi.innerHTML += `<span class="camp-row">${cards}</span>`;
-        }
-        // scroll: follow while streaming, freeze during a punch
-        if (!emphActive) msgArea.scrollTop = 1e6;
-      }
-    } else {
-      const streaming = t < GLAZE_END + 0.01;
-      msgAi.textContent = t < GLAZE_AT
-        ? REPLY.slice(0, Math.ceil(inP(rsp, RESP_DUR) * REPLY.length))
-        : REPLY + GLAZE.slice(0, t < GLAZE_END ? Math.min(GLAZE.length, glazeChars(t - GLAZE_AT)) : GLAZE.length);
-      msgAi.style.opacity = '1';
-      msgArea.scrollTop = 1e6;                      // follow the glaze
-      // the wall: the stream grows until it fills the frame top-to-bottom
-      // and pushes the composer off-screen, holding into the cut
-      const wallP = t <= WALL_AT ? 0 : Math.pow(inP(t - WALL_AT, GLAZE_END - WALL_AT), 1.5);
-      if (wallP > 0) {
-        msgArea.style.flex = `0 0 ${(56 + 44 * wallP).toFixed(1)}%`;
-        msgArea.style.maxHeight = 'none';
-        if (wallP >= 1) {
-          chat.style.justifyContent = 'flex-start';
-          chat.style.paddingBottom = '0px';
-        } else {
-          chat.style.justifyContent = '';
-          chat.style.paddingBottom = '';
-        }
-      } else {
-        msgArea.style.flex = '';
-        msgArea.style.maxHeight = '';
         chat.style.justifyContent = '';
         chat.style.paddingBottom = '';
       }
+    } else {
+      msgArea.style.flex = '';
+      msgArea.style.maxHeight = '';
+      chat.style.justifyContent = '';
+      chat.style.paddingBottom = '';
     }
-  }
-
-  // — the punch-ins (the solved-origin zoom from the favorite-color spot):
-  //   "No." once, then the three verdict fragments in turn —
-  chat.style.transform = 'none';
-  if (emphActive) {
-    const p0 = PUNCH_AT;
-    const e = t < p0 + PUNCH_IN ? easeOutQuint(inP(t - p0, PUNCH_IN))
-      : t < p0 + PUNCH_IN + PUNCH_HOLD ? 1
-      : 1 - easeInOutSine(inP(t - p0 - PUNCH_IN - PUNCH_HOLD, PUNCH_OUT));
-    // the word alone: the rest of the verdict has not streamed yet, the
-    // bubble and the composer fade, and the camera pushes clean
-    const target = msgAi.querySelector('.sb-no');
-    if (target) {
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      const ar = range.getBoundingClientRect(); // transform reset above: clean
-      const cr = chat.getBoundingClientRect();
-      const px = ar.left + ar.width / 2 - cr.left;
-      const py = ar.top + ar.height / 2 - cr.top;
-      const ox = (cr.width / 2 - EMPH_MAX * px) / (1 - EMPH_MAX);
-      const oy = (cr.height / 2 - EMPH_MAX * py) / (1 - EMPH_MAX);
-      chat.style.transformOrigin = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
-      chat.style.transform = `scale(${(1 + (EMPH_MAX - 1) * e).toFixed(4)})`;
-      // the frame empties as the camera pushes — the composer and the
-      // bubble fade so the punch-in path stays clean
-      const dim = 1 - e;
-      pill.style.opacity = dim.toFixed(3);
-      msgUser.style.opacity = (parseFloat(msgUser.style.opacity || '1') * dim).toFixed(3);
-    }
-  } else {
-    chat.style.transformOrigin = '';
-  }
-
-  // — the cursor, gliding in for the about-to-click beat —
-  const cp = t - CURSOR_AT;
-  if (cp > 0 && cp < CURSOR_DUR + CURSOR_HOLD + 0.2) {
-    const stage = chat.getBoundingClientRect();
-    const card = msgAi.querySelector('[data-camp="2"]');
-    if (card) {
-      const cr = card.getBoundingClientRect();
-      const p = easeInOutSine(inP(cp, CURSOR_DUR));
-      // from a resting point near the composer to the card's center
-      const sx = stage.width * 0.72, sy = stage.height * 0.9;
-      const tx = cr.left - stage.left + cr.width * 0.5;
-      const ty = cr.top - stage.top + cr.height * 0.5;
-      const x = sx + (tx - sx) * p, y = sy + (ty - sy) * p;
-      cursor.style.opacity = inP(cp, 0.2).toFixed(3);
-      cursor.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
-    }
-  } else {
-    cursor.style.opacity = '0';
   }
 }
+
 
 /* ---- the punch cards ---- */
 
@@ -445,8 +208,6 @@ function renderCards(t) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
   } else if (t >= CARD2_AT && t < CARDS_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
-  } else if (t >= CARDW_AT && t < CARDW_END) {
-    card = 'WE LIKE WINNING'; since = t - CARDW_AT;
   }
   if (card === null) {
     simple.style.opacity = '0';

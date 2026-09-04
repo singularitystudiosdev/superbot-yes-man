@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <main class="stage" aria-label="the pitch: a chatgpt-like home screen — the user links carbkiller.com, types 'Does my website look good?' and hits enter; the llm gushes its opener and then a glazing tirade that keeps accelerating without end; the cards cut in: LLMs are Yes Men — and, after a beat — AND YOU LIKE THAT? — then the bar takes '/superbot Does my website look good?' and superbot scrapes and audits before answering: lacks novelty, no monetization, burning $50 a month to hold the domain — the camera punches in on each — then recommends taking market share with attack ads framed as public comparisons, and attaches 3 ad campaigns, mini spots looping inside their cards; a cursor glides toward one — we like winning — then the superbot.gg end card">
+  <main class="stage" aria-label="the pitch: a chatgpt-like home screen — the user pastes carbkiller.com as plain text, types 'Does my website look good?' and hits enter; the llm gushes its opener and then a glazing tirade that keeps accelerating without end; the cards cut in: LLMs are made to agree with you — AND YOU LIKE THAT? — straight to the superbot.gg end card">
 
     <div class="chatui" id="chatui">
       <!-- the idle heading (fades once the conversation starts) -->
@@ -68,7 +68,7 @@
     </div>
 
     <!-- the punch cards, one at a time: LLMs are made to agree with you /
-         AND YOU LIKE THAT? / WE LIKE WINNING -->
+         AND YOU LIKE THAT? -->
     <div class="simple" id="simple" aria-hidden="true"></div>
 
     <!-- the end card: the superbot mascot beside the superbot.gg wordmark -->
@@ -76,11 +76,6 @@
       <pre class="endcard-bot" id="endBot"></pre>
       <div class="endcard-word" id="endWord">superbot<em>.gg</em></div>
     </div>
-
-    <!-- the user's cursor: only appears for the about-to-click beat -->
-    <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 2l14 11.2-6.6.9 3.6 6.4-2.6 1.4-3.6-6.5-4.8 4.6z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/>
-    </svg>
 
     <div class="veil" id="veil" aria-hidden="true"></div>
   </main>
