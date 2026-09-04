@@ -19,7 +19,7 @@
   --accent: #7cb389;
   --danger: #c96f6f;
   --gpt-input: #2a2a2c;
-  --gpt-bubble: #3a3a3e;
+  --gpt-bubble: #3a5fd0;
   --voice: #3f6ff0;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --font-ui: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -110,20 +110,9 @@ body {
   padding: 0 4px;
   opacity: 0;
 }
-/* the attached-link chip — in the bar and echoed in the user bubble */
-.attach-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  flex: none;
-  background: var(--gpt-input);
-  border: 1px solid #4a4a4f;
-  color: #e4e4e8;
-  font-size: clamp(12px, 1.1vw, 14px); line-height: 1;
-  padding: 6px 10px; border-radius: 9px;
-  white-space: pre;
-  will-change: transform, opacity;
-}
-.attach-chip svg { flex: none; color: #b6b6ba; }
-.attach-chip.in-bubble { margin-right: 8px; vertical-align: -3px; }
+/* the user bubble is BLUE in the real thing (verified on chatgpt.com,
+   2026-09-03: the sent message renders as a royal-blue bubble) — the
+   bubble rules below pick it up via --gpt-bubble */
 /* the input pill: the zoomed chat bar itself */
 .input-pill {
   position: relative;
@@ -211,7 +200,8 @@ body {
 .sb-no { font-weight: 700; color: #fff; }
 .sb-rest, .sb-frag { color: #ececf1; }
 .sb-pivot { display: block; padding-top: 10px; }
-/* the attached ad campaigns: three cards, each looping a mini spot */
+/* the attached ad campaigns: three cards, each playing a real clip of the
+   family's own spots, looping */
 .camp-note { display: block; padding-top: 10px; color: #8f8f95; font: clamp(11px, 1vw, 13.5px)/1.7 var(--font-mono); }
 .camp-row { display: flex; gap: 12px; padding: 8px 0 2px; }
 .camp {
@@ -231,15 +221,9 @@ body {
   border-bottom: 1px solid #1e1e22;
 }
 .camp .camp-bar b { color: #c9c9ce; font-weight: 700; }
-.camp .mini {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  background: #000;
-  overflow: hidden;
-  font: clamp(7px, .62vw, 9px)/1.5 var(--font-mono);
-  color: #b9b9be;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 0 8px;
+.camp video {
+  display: block; width: 100%; aspect-ratio: 16 / 9;
+  object-fit: cover; background: #000;
 }
 .camp .mini .mline { display: block; white-space: pre; }
 .camp .mini .mchip {

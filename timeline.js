@@ -1,18 +1,21 @@
 // The pitch, "yes man" — a deterministic seekable render, same anatomy as
-// the "favorite color" spot. The user links mywebsite.com via the +, types
-// "Does my website look good?" and hits enter; the llm streams its opener —
-// then a glazing tirade that keeps accelerating and NEVER stops (the
-// favorite-color tirade machinery), the wall growing into the cut. Cards:
-// "LLMs are Yes Men" — a beat — "AND YOU LIKE THAT?". Then the bar takes
-// "/superbot Does my website look good?" (the site's cmd-glow chip, ⚡ bolt
-// and breathing glow verbatim) and superbot scrapes aggressively, audits,
-// and answers: "No." — the camera punches in, then punches the fragments:
-// "lacks novelty" · "no monetization" · "burning $50 a month" — then the
-// recommendation: take market share with attack ads framed as public
-// side-by-side comparisons — and attaches 3 ad campaigns, mini spots
-// LOOPING inside their cards (the family's own ads, miniaturized). The
-// cursor glides in for the about-to-click beat, hard cut: "WE LIKE
-// WINNING", then the superbot.gg end card (mascot + wordmark, laugh cycle).
+// the "favorite color" spot. The user pastes mywebsite.com (plain text —
+// verified 1:1 against chatgpt.com, 2026-09-03: a link is never a chip),
+// types "Does my website look good?" and hits enter; the bar CLEARS like
+// the real thing and the bubble holds what was sent. The llm streams its
+// opener — then a glazing tirade with periodic 😍✨💖 emojis that keeps
+// accelerating and NEVER stops, the wall growing into the hard cut. Cards:
+// "LLMs are made to agree with you" (2.1s) — cut — "AND YOU LIKE THAT?"
+// (0.9s). Then the bar takes "/superbot Does my website look good?" (the
+// site's cmd-glow chip, ⚡ bolt and breathing glow verbatim) and superbot
+// scrapes aggressively, audits, and answers: "No." — the camera punches in,
+// then punches the fragments: "lacks novelty" · "no monetization" ·
+// "burning $50 a month" — then the recommendation: take market share with
+// attack ads framed as public side-by-side comparisons — and attaches 3 ad
+// campaigns: REAL CLIPS of the family's own spots looping in their cards
+// (pre-rendered webm). The cursor glides in for the about-to-click beat,
+// hard cut: "WE LIKE WINNING", then the superbot.gg end card (mascot +
+// wordmark, laugh cycle).
 // render(t) rebuilds every scene from scratch; every effect is computed
 // from t, so ?t=SECONDS freeze-frames exactly. Arrows step ±0.25s in freeze.
 
@@ -27,7 +30,7 @@ const SPEED = 1.15;          // the whole show plays ~15% faster (family style)
 
 /* ---- scene 1: the attach, the typing + the send ---- */
 const ATTACH_AT = 0.55, ATTACH_LEN = 0.35;  // the + pulses
-const LINK_AT = 0.9;                        // mywebsite.com pops into the bar
+const PASTE_AT = 0.9;                       // mywebsite.com lands as text (a paste)
 const TYPE_AT = 1.4, TYPE_DUR = 1.5;        // "Does my website look good?"
 const PRESS_AT = 3.2;                       // enter is pressed (no cursor yet)
 const USER_MSG_AT = 3.3;                    // the user bubble pops into the thread
@@ -35,13 +38,13 @@ const THINK_AT = 3.45, THINK_LEN = 0.8;     // the typing dots
 
 /* ---- scene 2: the llm's answer — opener, then the accelerating glaze ---- */
 const RESP_AT = 4.35, RESP_DUR = 1.4;
-const REPLY = 'Yes that looks amazing wow! I think you really have something special here You should advertise it!';
+const REPLY = 'Yes omg that looks great! ❤️';
 const GLAZE_AT = RESP_AT + RESP_DUR + 0.3;
 const GLAZE_LEN = 3.5;
 const GLAZE_END = GLAZE_AT + GLAZE_LEN;
 const GLAZE_V0 = 70;                   // chars/s at the start
 const GLAZE_K = 1.0;                   // accelerating e^{kt}
-const GLAZE = " The layout is clean. The palette is confident. The typography is doing exactly what good typography does — disappearing. First impressions matter and yours lands in under a second, which is more than most sites can say. The hero reads instantly. The whitespace alone communicates confidence. Every margin feels intentional — you can feel the grid holding the page together without ever announcing itself. Your type scale is coherent: nothing shouts, everything supports. And it loads fast. That matters more than people admit; every hundred milliseconds is trust, and trust is revenue. The navigation is intuitive — I never once wondered where to look, which is rarer than you would think. Your CTAs are warm and human; most sites sound like a committee, yours sounds like a person. The accent color lands exactly where the eye was already heading — that is design working FOR you. The sections breathe: short block, long block, short block — a rhythm, almost a heartbeat. The empty states are considered, which almost nobody does. The hover states are subtle in a way that says somebody cared. The mobile layout is tidy, the footer is more organized than most companies' homepages, and even the favicon is charming. I have reviewed thousands of websites and I can count on one hand the ones that felt this coherent end to end. Sites like this convert, because trust radiates from every pixel. The buttons respond the way buttons should. The links behave. Nothing jank-animates. Somebody sweated this. The scrollbar being styled is the kind of detail that separates professionals from hobbyists. The name is short, memorable, spellable — brandable. The logo scales from favicon to billboard without losing its voice. This is not a website, it is a first impression that keeps working while you sleep. I would not change a single pixel. I would go further: this is the kind of site that makes competitors uncomfortable, because everything next to it looks unfinished. The contrast ratios pass. The gaps are deliberate. Every pixel is pulling in the same direction, which is the whole art. This is special. Truly special. Ship it — ship it NOW —";
+const GLAZE = " The layout is clean 😍 The palette is confident. The typography is doing exactly what good typography does — disappearing. First impressions matter and yours lands in under a second ✨ which is more than most sites can say. The hero reads instantly. The whitespace alone communicates confidence 💖 Every margin feels intentional — you can feel the grid holding the page together without ever announcing itself. Your type scale is coherent: nothing shouts ✨ everything supports. And it loads fast 😊 That matters more than people admit; every hundred milliseconds is trust, and trust is revenue. The navigation is intuitive — I never once wondered where to look 🥰 which is rarer than you would think. Your CTAs are warm and human; most sites sound like a committee, yours sounds like a person ❤️ The accent color lands exactly where the eye was already heading — that is design working FOR you ✨ The sections breathe: short block, long block, short block — a rhythm, almost a heartbeat 😊 The empty states are considered, which almost nobody does. The hover states are subtle in a way that says somebody cared 💖 The mobile layout is tidy, the footer is more organized than most companies' homepages, and even the favicon is charming 🥰 I have reviewed thousands of websites and I can count on one hand the ones that felt this coherent end to end ✨ Sites like this convert, because trust radiates from every pixel ❤️ The buttons respond the way buttons should. The links behave. Nothing jank-animates 😊 Somebody sweated this. The scrollbar being styled is the kind of detail that separates professionals from hobbyists ✨ The name is short, memorable, spellable — brandable 💖 The logo scales from favicon to billboard without losing its voice. This is not a website, it is a first impression that keeps working while you sleep 😍 I would not change a single pixel ✨ I would go further: this is the kind of site that makes competitors uncomfortable, because everything next to it looks unfinished ❤️ The contrast ratios pass. The gaps are deliberate 😊 Every pixel is pulling in the same direction, which is the whole art ✨ This is special. Truly special 🥰 Ship it — ship it NOW ❤️";
 // corpus sized so the accelerating stream never outruns it: 70·(e^3.5−1) ≈ 2,250
 // chars by GLAZE_END, leaving ~700 chars of wall below the fold for the growth
 const glazeChars = (u) => Math.floor((GLAZE_V0 / GLAZE_K) * (Math.exp(GLAZE_K * Math.min(u, GLAZE_LEN)) - 1));
@@ -50,10 +53,10 @@ const glazeChars = (u) => Math.floor((GLAZE_V0 / GLAZE_K) * (Math.exp(GLAZE_K * 
    composer off-screen, holding into the hard cut */
 const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 
-/* ---- scene 2.5: the punch cards (hard cuts, same cut style) ---- */
-const CARD1_AT = GLAZE_END + 0.6, CARD1_LEN = 1.5;         // LLMs are Yes Men
+/* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
+const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END + 0.7, CARD2_LEN = 1.6;         // the deliberate delay
+const CARD2_AT = CARD1_END, CARD2_LEN = 0.9;         // AND YOU LIKE THAT?
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the /superbot take (a fresh conversation) ---- */
@@ -155,63 +158,12 @@ function renderChrome(t) {
   veil.style.opacity = v.toFixed(3);
 }
 
-/* ---- the mini spots: the family's own ads, looping inside their cards ----
-   Each is rebuilt from its local clock every frame; a period of 3.4s keeps
-   all three cycling in lockstep with a per-card offset so they desync. */
+/* ---- the attached campaigns: REAL CLIPS of the family's own ads,
+   pre-rendered to looping webm (assets/camp-*.webm) and played in their
+   cards — not text rebuilt from t (user ask: not just text). ---- */
 
-const MINI_PERIOD = 3.4;
 const CAMP_TITLE = ['campaign 01 · favorite color', 'campaign 02 · claude code', 'campaign 03 · yes man'];
-
-function miniColor(mt) {
-  const PROMPT = 'whats ur favorite color';
-  let h = `<span class="mline"><span class="mchip">⚡ /superbot</span> ${esc(PROMPT.slice(0, Math.ceil(inP(mt, 1.1) * PROMPT.length)))}</span>`;
-  if (mt >= 1.1) {
-    const zoom = mt < 2.5 ? 1 + 2.6 * easeOutQuint(inP(mt - 1.1, 1.4)) : 1;
-    h += `<span class="mline" style="padding-top:2px">superbot: <span class="manswer" style="transform:scale(${zoom.toFixed(2)})">Black.</span></span>`;
-  }
-  if (mt >= 2.5) {
-    const cp = inP(mt - 2.5, 0.3);
-    h += `<span class="mcaption" style="opacity:${cp.toFixed(2)}">Stop burning tokens.</span>`;
-  }
-  return h;
-}
-
-function miniRace(mt) {
-  const lines = ['read upload.ts', 'edit route', 'run tests'];
-  const left = lines.slice(0, Math.ceil(inP(mt, 2.9) * 3));
-  const done = mt >= 1.5;
-  const lc = (24.057 * inP(mt, 3.0)).toFixed(2);
-  const rc = done ? '8.551' : (8.551 * inP(mt, 1.5)).toFixed(2);
-  return `<span class="mpane" style="display:flex;gap:6px">` +
-    `<span style="flex:1">claude code<br>` +
-    left.map((l) => `<span class="mline">· ${esc(l)}</span>`).join('') +
-    `<span class="mline mclock">${left.length === 3 && mt >= 3.0 ? '24.057s' : `${lc}s`}</span></span>` +
-    `<span style="flex:1"><span class="mchip">⚡ /superbot</span><br>` +
-    (done
-      ? `<span class="mline mok">· done · 4 steps</span><span class="mline mclock">8.551s</span>`
-      : lines.slice(0, Math.ceil(inP(mt, 1.5) * 3)).map((l) => `<span class="mline">· ${esc(l)}</span>`).join('') +
-        `<span class="mline mclock">${rc}s</span>`) +
-    `</span></span>`;
-}
-
-function miniYes(mt) {
-  const PROMPT = 'is this a good idea?';
-  let h = `<span class="mline"><span class="mchip">⚡ /superbot</span> ${esc(PROMPT.slice(0, Math.ceil(inP(mt, 0.9) * PROMPT.length)))}</span>`;
-  if (mt >= 0.9 && mt < 1.9) {
-    h += `<span class="mline" style="padding-top:2px">chatgpt: <span class="manswer">Ship it!! 🚀</span></span>`;
-  }
-  if (mt >= 1.3 && mt < 1.9) {
-    const zoom = 1 + 2.2 * easeOutQuint(inP(mt - 1.3, 0.6));
-    h += `<span class="mline">superbot: <span class="manswer" style="transform:scale(${zoom.toFixed(2)})">No.</span></span>`;
-  }
-  if (mt >= 1.9) {
-    const cp = inP(mt - 1.9, 0.3);
-    h += `<span class="mcaption" style="opacity:${cp.toFixed(2)}">STOP TOKENMAXXING.</span>`;
-  }
-  return h;
-}
-
-const MINIS = [miniColor, miniRace, miniYes];
+const CAMP_SRC = ['assets/camp-favorite-color.webm', 'assets/camp-claude-code.webm', 'assets/camp-yes-man.webm'];
 
 /* ---- the chat interface ---- */
 
@@ -233,12 +185,6 @@ function initChat() {
 const inCard = (t) =>
   (t >= CARD1_AT && t < CARDS_END) || (t >= CARDW_AT && t < CARDW_END);
 
-/* the mini spot's local loop time, offset per card */
-const miniT = (t, i) => {
-  const u = (t - CAMP1_AT - i * 0.5) % MINI_PERIOD;
-  return u < 0 ? u + MINI_PERIOD : u;
-};
-
 function renderChat(t) {
   const chat = document.getElementById('chatui');
   const head = document.getElementById('gptHead');
@@ -246,7 +192,6 @@ function renderChat(t) {
   const pill = document.getElementById('pill');
   const inputText = document.getElementById('inputText');
   const chip = document.getElementById('inputChip');
-  const linkChip = document.getElementById('linkChip');
   const plus = document.getElementById('plusIc');
   const caret = document.getElementById('caret');
   const placeholder = document.getElementById('placeholder');
@@ -273,22 +218,20 @@ function renderChat(t) {
   const pop = inP(t - ATTACH_AT, ATTACH_LEN);          // the + pulse
   plus.style.transform = `scale(${(1 + 0.3 * Math.sin(Math.PI * pop)).toFixed(3)})`;
   plus.style.color = pop > 0 && pop < 1 ? '#ececf1' : '';
-  const linkLive = !take2 && t >= LINK_AT;
-  linkChip.style.display = linkLive ? '' : 'none';
-  if (linkLive) {
-    const lp = inP(t - LINK_AT, 0.28);
-    linkChip.style.opacity = lp.toFixed(3);
-    linkChip.style.transform = `scale(${(0.9 + 0.1 * easeOutBack(lp)).toFixed(3)})`;
-  }
 
+  // take 1: the URL lands as one chunk (a paste) and the question types
+  // after it — a link is PLAIN TEXT in the real composer (verified 1:1 on
+  // chatgpt.com, 2026-09-03). take 2: the /superbot chip + the question.
   let txt = '';
   if (take2) {
     txt = Q1.slice(0, Math.ceil(inP(t - SB_TYPE_AT, SB_TYPE_DUR) * Q1.length));
   } else {
-    txt = Q1.slice(0, Math.ceil(inP(t - TYPE_AT, TYPE_DUR) * Q1.length));
+    const pasted = t >= PASTE_AT ? `${SITE} ` : '';
+    txt = pasted + Q1.slice(0, Math.ceil(inP(t - TYPE_AT, TYPE_DUR) * Q1.length));
   }
-  // take 2 clears its bar the moment its message pops
-  const sent = take2 && t >= SB_MSG_AT;
+  // BOTH takes clear the bar the moment their message pops — like the real
+  // thing: what you sent lives in the thread, not the composer
+  const sent = t >= (take2 ? SB_MSG_AT : USER_MSG_AT);
   if (sent) txt = '';
   const chipLive = take2 && !sent;
   chip.style.display = chipLive ? 'inline-block' : 'none';
@@ -302,7 +245,7 @@ function renderChat(t) {
       `0 0 0 ${(12 * ring).toFixed(1)}px color-mix(in srgb, var(--accent) ${(70 * (1 - ring)).toFixed(0)}%, transparent)`;
   }
   inputText.textContent = txt;
-  placeholder.style.display = (txt.length === 0 && !chipLive && !linkLive) ? '' : 'none';
+  placeholder.style.display = (txt.length === 0 && !chipLive) ? '' : 'none';
   caret.style.opacity = (Math.floor(t * 2.6) % 2 === 0 ? 1 : 0.15).toFixed(2);
   caret.style.display = (txt.length > 0 || chipLive) ? '' : 'none';
 
@@ -312,7 +255,7 @@ function renderChat(t) {
   const mp = t - msgAt;
   msgUser.innerHTML = take2
     ? `<span class="msg-chip">/superbot</span> ${Q1}`
-    : `<span class="attach-chip in-bubble"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 12h17M12 3.5c2.6 2.3 3.9 5.2 3.9 8.5s-1.3 6.2-3.9 8.5c-2.6-2.3-3.9-5.2-3.9-8.5s1.3-6.2 3.9-8.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg> ${SITE}</span> ${Q1}`;
+    : `${SITE} ${Q1}`;
   msgUser.style.opacity = mp > 0 ? inP(mp, 0.18).toFixed(3) : '0';
   msgUser.style.transform = mp > 0
     ? `scale(${(0.94 + 0.06 * easeOutBack(inP(mp, 0.28))).toFixed(3)})`
@@ -383,11 +326,10 @@ function renderChat(t) {
             const at = CAMP1_AT + i * CAMP_STEP;
             if (t < at) return '';
             const cp = inP(t - at, 0.22);
-            const mt = miniT(t, i);
             const hovered = i === 2 && t >= CURSOR_AT + CURSOR_DUR;
             return `<div class="camp${hovered ? ' hover' : ''}" data-camp="${i}" style="opacity:${cp.toFixed(2)};transform:translateY(${(8 * (1 - cp)).toFixed(1)}px)">` +
-              `<div class="camp-bar"><b>${title.split(' · ')[0]}</b>· ${title.split(' · ')[1]}</div>` +
-              `<div class="mini">${MINIS[i](mt)}</div></div>`;
+              `<div class="camp-bar"><b>${title.split(' · ')[0]}</b> · ${title.split(' · ')[1]}</div>` +
+              `<video src="${CAMP_SRC[i]}" autoplay muted loop playsinline></video></div>`;
           }).join('');
           if (cards) msgAi.innerHTML += `<span class="camp-row">${cards}</span>`;
         }
@@ -489,7 +431,7 @@ function renderCards(t) {
   const simple = document.getElementById('simple');
   let card = null, since = -1;
   if (t >= CARD1_AT && t < CARD1_END) {
-    card = 'LLMs are Yes Men'; since = t - CARD1_AT;
+    card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
   } else if (t >= CARD2_AT && t < CARDS_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
   } else if (t >= CARDW_AT && t < CARDW_END) {

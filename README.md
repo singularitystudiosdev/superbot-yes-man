@@ -3,20 +3,22 @@
 superbot.gg advertisement — "ChatGPT is a Yes Man". A chatgpt-like frontend,
 deterministic and seekable, rendered live in a 16:9 frame:
 
-1. the user links `mywebsite.com` via the `+`, types **"Does my website look
-   good?"** and hits enter; the llm gushes *"Yes that looks amazing wow! I
-   think you really have something special here You should advertise it!"* —
-   then a glazing tirade that keeps accelerating and never stops
-2. hard-cut punch cards: **LLMs are Yes Men** → (a deliberate beat) →
-   **AND YOU LIKE THAT?**
+1. the user pastes `mywebsite.com` (plain text — verified 1:1 on chatgpt.com:
+   a link is never a chip), types **"Does my website look good?"** and hits
+   enter; the bar clears like the real thing; the llm gushes *"Yes omg that
+   looks great! ❤️"* — then a glazing tirade with periodic 😍✨💖 emojis that
+   keeps accelerating and never stops
+2. hard-cut punch cards: **LLMs are made to agree with you** (2.1s) → cut →
+   **AND YOU LIKE THAT?** (0.9s)
 3. the bar takes `/superbot Does my website look good?` — superbot scrapes
    aggressively across the web and audits, then: **"No.** Your business
    lacks novelty, has no monetization, and is burning $50 a month to hold
    the domain." — the camera punches in on each fragment in turn — then
    *"I recommend you aggressively take market share from a competing
    company — attack ads, framed properly: public side-by-side comparisons,
-   their numbers next to yours."* and attaches **3 ad campaigns** — the
-   family's own spots looping as mini scenes inside their cards
+   their numbers next to yours."* and attaches **3 ad campaigns** — real
+   looping clips of the family's own spots, pre-rendered to
+   `assets/camp-*.webm` from the live pages (headless frames + ffmpeg)
 4. the cursor glides in, about to click campaign 03 — hard cut: **WE LIKE
    WINNING** → the superbot.gg end card (mascot + wordmark, laugh cycle)
 
