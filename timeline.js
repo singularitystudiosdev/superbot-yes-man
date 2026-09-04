@@ -53,54 +53,239 @@ const CARD1_END = CARD1_AT + CARD1_LEN;
 const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then the transition)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
-/* ---- the card→outro transition: 40 simple, smooth variants (user ask —
-   nothing artsy). Pick one with ?tr=NAME; variants.html compares them all.
-   Each variant = how the text leaves (OUTS) × how the mascot arrives
-   (mas) × an optional pure-black beat between the two (pre). ---- */
-const OUTS = {
-  fade:         { d: 0.6 },
-  'fade-slow':  { d: 1.0 },
-  'fade-fast':  { d: 0.3 },
-  'fade-up':    { d: 0.6, dy: -16 },
-  'fade-down':  { d: 0.6, dy: 16 },
-  'fade-left':  { d: 0.6, dx: -20 },
-  'fade-right': { d: 0.6, dx: 20 },
-  'fade-up-back': { d: 0.7, dy: -12 },
-  'blur-out':   { d: 0.6, blur: 8 },
-  'blur-soft':  { d: 0.9, blur: 4 },
-  'scale-down': { d: 0.6, s: 0.94 },
-  'scale-up':   { d: 0.6, s: 1.06 },
-  'tracking-out': { d: 0.7, ls: 6 },
-  'tracking-in':  { d: 0.7, ls: -2 },
-  'lift-blur':  { d: 0.7, dy: -12, blur: 6 },
-  'drop-blur':  { d: 0.7, dy: 12, blur: 6 },
-  'fade-hold':  { d: 0.6, hold: true },   // text stays sharp, then leaves fast
-  'fade-early': { d: 0.6, early: true },  // text leaves in the first 40%
-  'back-out':   { d: 0.6, s: 1.05, back: true },
-  'breathe':    { d: 0.7, s: 0.97, sine: true },
+/* ---- the card→outro transition: 40 FUNDAMENTALLY different mechanisms
+   (user ask — no two are the same trick with different timing). Pick one
+   with ?tr=NAME; variants.html compares them all. Each entry owns how the
+   "AND YOU LIKE THAT?" text leaves: d = leave duration, split = needs
+   per-letter spans, mas = how the outro arrives, pre = pure-black beat.
+   fn(el, L, p, t): el is the card overlay, L the letter spans (when split),
+   p the eased 0→1 progress, t the absolute scene time. Deterministic in
+   (p, t) — freeze-frames and arrow-stepping land exactly. ---- */
+const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const GLYPH_SCRAMBLE = '▓▒░#*+%@&';
+const scrambleChar = (i, t) => GLYPH_SCRAMBLE[Math.floor(hash(i * 3.7 + Math.floor(t * 20)) * GLYPH_SCRAMBLE.length) % GLYPH_SCRAMBLE.length];
+
+const LEAVES = {
+  fade: { d: 0.55, fn: (el, L, p) => { el.style.opacity = (1 - p).toFixed(3); } },
+  shatter: { d: 0.8, split: true, mas: 'pop', fn: (el, L, p) => {
+    L.forEach((s, i) => {
+      const a = hash(i) * Math.PI * 2, dist = 70 + 90 * hash(i + 7);
+      const q = clamp(p * 1.3 - 0.3 * hash(i + 3), 0, 1);
+      s.style.transform = `translate(${(Math.cos(a) * dist * q).toFixed(1)}px, ${(Math.sin(a) * dist * q + 26 * q * q).toFixed(1)}px) rotate(${((hash(i + 11) - 0.5) * 160 * q).toFixed(1)}deg)`;
+      s.style.opacity = (1 - q).toFixed(3);
+    });
+  } },
+  cascade: { d: 0.85, split: true, fn: (el, L, p) => {
+    const n = L.length;
+    L.forEach((s, i) => { s.style.opacity = clamp(p * 2 - (i / n) * 1.6, 0, 1) === 0 ? '0' : (1 - clamp(p * 2 - (i / n) * 1.6, 0, 1)).toFixed(3); });
+  } },
+  erase: { d: 0.7, fn: (el, L, p, t) => { setCard(el, cardNow(t, 1 - p)); } },
+  wipe: { d: 0.55, fn: (el, L, p) => { el.style.clipPath = `inset(-2% ${(-2 + p * 102).toFixed(2)}% -2% -2%)`; } },
+  iris: { d: 0.6, fn: (el, L, p) => { el.style.clipPath = `circle(${((1 - p) * 75).toFixed(2)}% at 50% 50%)`; } },
+  melt: { d: 0.75, fn: (el, L, p) => {
+    el.style.filter = `blur(${(14 * p).toFixed(2)}px)`;
+    el.style.letterSpacing = `${(8 * p).toFixed(2)}px`;
+    el.style.opacity = (1 - p * p).toFixed(3);
+  } },
+  slide: { d: 0.5, mas: 'rise', fn: (el, L, p) => { el.style.transform = `translateX(${(-p * 110).toFixed(2)}vw)`; } },
+  flip: { d: 0.6, fn: (el, L, p) => {
+    el.style.transform = `perspective(600px) rotateX(${(p * 90).toFixed(2)}deg)`;
+    el.style.opacity = (1 - p * p).toFixed(3);
+  } },
+  zoom: { d: 0.55, mas: 'nodrift', fn: (el, L, p) => {
+    el.style.transform = `scale(${(1 + 2.4 * p).toFixed(4)})`;
+    el.style.filter = `blur(${(12 * p).toFixed(2)}px)`;
+    el.style.opacity = (1 - p * p).toFixed(3);
+  } },
+  sink: { d: 0.6, fn: (el, L, p) => {
+    el.style.transform = `translateY(${(45 * p * p).toFixed(2)}vh) scale(${(1 - 0.6 * p).toFixed(4)})`;
+    el.style.opacity = (1 - p * p).toFixed(3);
+  } },
+  glitch: { d: 0.7, mas: 'pop', fn: (el, L, p, t) => {
+    const step = Math.floor(t * 24);
+    const dx = (hash(step) - 0.5) * 22, dy = (hash(step + 4) - 0.5) * 12;
+    el.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+    el.style.opacity = p > 0.85 ? '0' : (hash(step + 9) > 0.3 ? '1' : '0.35');
+  } },
+  embers: { d: 0.9, split: true, fn: (el, L, p, t) => {
+    L.forEach((s, i) => {
+      const q = clamp(p * 1.4 - 0.4 * hash(i), 0, 1);
+      const sway = 14 * Math.sin(t * 3 + i) * q;
+      s.style.transform = `translate(${sway.toFixed(1)}px, ${(-90 * (0.4 + hash(i + 5)) * q * q).toFixed(1)}px)`;
+      s.style.opacity = (1 - q).toFixed(3);
+    });
+  } },
+  gravity: { d: 0.8, split: true, fn: (el, L, p) => {
+    L.forEach((s, i) => {
+      const q = clamp(p * 1.5 - 0.5 * hash(i), 0, 1);
+      s.style.transform = `translateY(${(70 * q * q * (0.6 + 0.8 * hash(i + 2))).toFixed(1)}vh) rotate(${((hash(i + 6) - 0.5) * 240 * q).toFixed(1)}deg)`;
+      s.style.opacity = q > 0.85 ? '0' : '1';
+    });
+  } },
+  wind: { d: 0.75, split: true, fn: (el, L, p) => {
+    L.forEach((s, i) => {
+      const q = clamp(p * 1.4 - 0.4 * hash(i), 0, 1);
+      s.style.transform = `translateX(${(130 * (0.4 + hash(i + 8)) * q * q).toFixed(1)}vw) skewX(${(-30 * q).toFixed(1)}deg)`;
+      s.style.opacity = (1 - q).toFixed(3);
+    });
+  } },
+  crt: { d: 0.5, pre: 0.1, fn: (el, L, p) => {
+    if (p < 0.5) {
+      el.style.transform = `scaleY(${Math.max(0.02, 1 - p * 2).toFixed(4)})`;
+    } else {
+      el.style.transform = `scaleY(0.02) scaleX(${Math.max(0, 1 - (p - 0.5) * 2).toFixed(4)})`;
+    }
+  } },
+  static: { d: 0.55, fn: (el, L, p, t) => {
+    const full = cardNow(t);
+    let out = '';
+    for (let i = 0; i < full.length; i++) out += hash(i + Math.floor(t * 20)) < 1 - p ? scrambleChar(i, t) : ' ';
+    setCard(el, out);
+    el.style.opacity = p > 0.8 ? ((1 - p) * 6.6).toFixed(3) : '1';
+  } },
+  flicker: { d: 0.8, fn: (el, L, p, t) => {
+    el.style.opacity = p >= 0.75 ? '0' : (hash(Math.floor(t * 30)) > p ? '1' : '0.15');
+  } },
+  ink: { d: 0.85, fn: (el, L, p) => {
+    el.style.filter = `blur(${(20 * p).toFixed(2)}px)`;
+    el.style.transform = `scale(${(1 + 0.5 * p).toFixed(4)})`;
+    el.style.opacity = Math.pow(1 - p, 1.5).toFixed(3);
+  } },
+  stamp: { d: 0.75, mas: 'pop', fn: (el, L, p, t) => {
+    if (p < 0.3) {
+      el.style.transform = `scale(${(2.6 - 5.33 * p).toFixed(4)})`;
+      el.style.opacity = '1';
+    } else {
+      const q = (p - 0.3) / 0.7;
+      const shake = q < 0.15 ? (hash(Math.floor(t * 40)) - 0.5) * 8 : 0;
+      el.style.transform = `translate(${shake.toFixed(1)}px, ${(60 * q * q).toFixed(2)}vh) scale(1)`;
+      el.style.opacity = (1 - q * q).toFixed(3);
+    }
+  } },
+  bounce: { d: 0.9, fn: (el, L, p) => {
+    const y = 130 * p * p + 20 * Math.abs(Math.sin(p * 14)) * (1 - p);
+    el.style.transform = `translateY(${y.toFixed(1)}vh)`;
+    el.style.opacity = p > 0.9 ? ((1 - p) * 10).toFixed(3) : '1';
+  } },
+  slingshot: { d: 0.7, fn: (el, L, p) => {
+    const x = p < 0.35 ? -60 * easeInOutSine(p / 0.35) : -60 + 1400 * Math.pow((p - 0.35) / 0.65, 2);
+    el.style.transform = `translateX(${x.toFixed(1)}px) scale(${p < 0.35 ? 1 - 0.04 * (p / 0.35) : 1})`;
+  } },
+  coin: { d: 0.6, fn: (el, L, p) => {
+    el.style.transform = `perspective(800px) rotateY(${(p * 160).toFixed(2)}deg) translateX(${(20 * p * p).toFixed(2)}vw)`;
+  } },
+  peel: { d: 0.6, fn: (el, L, p) => {
+    const k = clamp(100 - 200 * p, 0, 100);
+    el.style.clipPath = `polygon(0 0, 100% 0, 100% 0%, ${k}% 100%, 0% ${k}%)`;
+  } },
+  curtain: { d: 0.5, pre: 0.18, fn: (el, L, p) => {
+    el.style.clipPath = `inset(-2% ${(p * 51).toFixed(2)}% -2% ${(p * 51).toFixed(2)}%)`;
+  } },
+  blinds: { d: 0.6, split: true, fn: (el, L, p) => {
+    L.forEach((s, i) => {
+      const band = i % 4;
+      const q = clamp(p * 1.6 - band * 0.2, 0, 1);
+      s.style.transform = `scaleY(${Math.max(0.02, 1 - q).toFixed(3)})`;
+      s.style.opacity = q > 0.9 ? '0' : '1';
+    });
+  } },
+  part: { d: 0.55, mas: 'pop', split: true, fn: (el, L, p) => {
+    const n = L.length;
+    L.forEach((s, i) => {
+      const dir = i < n / 2 ? -1 : 1;
+      s.style.transform = `translateX(${(dir * 110 * p).toFixed(1)}vw)`;
+      s.style.opacity = (1 - p).toFixed(3);
+    });
+  } },
+  elevator: { d: 0.6, mas: 'wordfirst', fn: (el, L, p) => {
+    el.style.transform = `translateY(${(-55 * p * p).toFixed(2)}vh)`;
+  } },
+  strobe: { d: 0.6, pre: 0.12, fn: (el, L, p, t) => {
+    el.style.opacity = p >= 0.85 ? '0' : (hash(Math.floor(t * 18)) > 0.5 ? '1' : '0');
+  } },
+  outline: { d: 0.7, fn: (el, L, p) => {
+    if (p < 0.5) {
+      const q = p / 0.5;
+      el.style.color = `rgba(240,240,240,${(1 - q).toFixed(3)})`;
+      el.style.webkitTextStroke = '1px #f0f0f0';
+    } else {
+      const q = (p - 0.5) / 0.5;
+      el.style.color = 'rgba(240,240,240,0)';
+      el.style.webkitTextStroke = `1px rgba(240,240,240,${(1 - q).toFixed(3)})`;
+    }
+  } },
+  echo: { d: 0.65, fn: (el, L, p) => {
+    const shadows = [];
+    for (let k = 1; k <= 5; k++) shadows.push(`${(k * 26 * p).toFixed(1)}px ${(k * 26 * p).toFixed(1)}px 0 rgba(240,240,240,${Math.max(0, 0.5 - k * 0.08).toFixed(3)})`);
+    el.style.textShadow = shadows.join(', ');
+    el.style.opacity = (1 - p).toFixed(3);
+  } },
+  karaoke: { d: 0.8, split: true, fn: (el, L, p) => {
+    const n = L.length;
+    L.forEach((s, i) => {
+      s.style.color = i / n < p ? 'rgba(240,240,240,0.06)' : '';
+    });
+    el.style.opacity = p > 0.85 ? ((1 - p) * 6.6).toFixed(3) : '1';
+  } },
+  magnet: { d: 0.6, split: true, fn: (el, L, p) => {
+    const n = L.length;
+    L.forEach((s, i) => {
+      s.style.transform = `translateX(${((0.5 - i / n) * 340 * p).toFixed(1)}px) scale(${Math.max(0.01, 1 - p).toFixed(3)})`;
+      s.style.opacity = (1 - p).toFixed(3);
+    });
+  } },
+  vortex: { d: 0.85, split: true, fn: (el, L, p) => {
+    L.forEach((s, i) => {
+      const a = hash(i) * Math.PI * 2, r = 220 * (1 - p);
+      s.style.transform = `translate(${(Math.cos(a) * r).toFixed(1)}px, ${(Math.sin(a) * r).toFixed(1)}px) rotate(${(p * 540).toFixed(1)}deg)`;
+      s.style.opacity = (1 - p).toFixed(3);
+    });
+  } },
+  heartbeat: { d: 0.7, fn: (el, L, p) => {
+    el.style.transform = `scale(${(1 + 0.14 * Math.abs(Math.sin(p * Math.PI * 2)) * (1 - p)).toFixed(4)})`;
+    el.style.opacity = p > 0.9 ? ((1 - p) * 10).toFixed(3) : '1';
+  } },
+  snow: { d: 1.0, split: true, fn: (el, L, p, t) => {
+    L.forEach((s, i) => {
+      const q = clamp(p * 1.2 - 0.2 * hash(i), 0, 1);
+      const sway = 24 * Math.sin(t * 1.6 + i) * q;
+      s.style.transform = `translate(${(sway + (hash(i + 4) - 0.5) * 60 * q).toFixed(1)}px, ${(85 * (0.5 + 0.8 * hash(i + 9)) * q * q).toFixed(1)}px)`;
+      s.style.opacity = (1 - q * 0.95).toFixed(3);
+    });
+  } },
+  scramble: { d: 0.7, fn: (el, L, p, t) => {
+    const full = cardNow(t);
+    let out = '';
+    for (let i = 0; i < full.length; i++) out += i / full.length < p ? scrambleChar(i, t) : full[i];
+    setCard(el, out);
+    el.style.opacity = p > 0.85 ? ((1 - p) * 6.6).toFixed(3) : '1';
+  } },
+  bloom: { d: 0.6, mas: 'zoom', fn: (el, L, p) => {
+    el.style.textShadow = `0 0 ${(8 + 34 * p).toFixed(1)}px rgba(240,240,240,${(0.85 * p).toFixed(3)})`;
+    el.style.transform = `scale(${(1 + 0.06 * p).toFixed(4)})`;
+    el.style.opacity = p > 0.72 ? Math.max(0, 1 - (p - 0.72) / 0.09).toFixed(3) : '1';
+  } },
+  shockwave: { d: 0.6, fn: (el, L, p) => {
+    const k = Math.min(3, Math.floor(p * 3.2));
+    el.style.transform = `scale(${(1 + k * 0.28).toFixed(3)})`;
+    el.style.opacity = (1 - k / 3).toFixed(3);
+  } },
+  instant: { d: 0, fn: () => {} },
 };
-const TRANSITIONS = [
-  ['fade', 'plain'], ['fade-slow', 'plain'], ['fade-fast', 'plain'], ['fade-up', 'plain'],
-  ['fade-down', 'plain'], ['fade-left', 'plain'], ['fade-right', 'plain'], ['fade-up-back', 'plain'],
-  ['blur-out', 'plain'], ['blur-soft', 'plain'], ['scale-down', 'plain'], ['scale-up', 'plain'],
-  ['tracking-out', 'plain'], ['tracking-in', 'plain'], ['lift-blur', 'plain'], ['drop-blur', 'plain'],
-  ['fade-hold', 'plain'], ['fade-early', 'plain'], ['back-out', 'plain'], ['breathe', 'plain'],
-  ['fade', 'pop'], ['fade-up', 'pop'], ['blur-out', 'pop'], ['scale-down', 'pop'],
-  ['fade-fast', 'pop'], ['fade', 'rise'], ['fade-up', 'rise'], ['fade', 'zoom'],
-  ['scale-down', 'zoom'], ['fade', 'wordfirst'], ['fade-up', 'wordfirst'], ['fade', 'nodrift'],
-  ['fade-up', 'nodrift'], ['blur-out', 'nodrift'], ['fade-hold', 'pop'], ['fade', 'plain', 0.25],
-  ['instant', 'plain'], ['fade-hold', 'nodrift'], ['blur-soft', 'pop'], ['breathe', 'nodrift'],
-].map(([out, mas, pre], i) => ({
-  name: out === 'instant' ? 'instant' : `v${String(i + 1).padStart(2, '0')}-${out}-${mas}${pre ? `-beat` : ''}`,
-  out, mas, pre: pre || 0,
+const TRANSITIONS = Object.keys(LEAVES).map((name) => ({
+  name,
+  leave: name,
+  mas: LEAVES[name].mas || 'plain',
+  pre: LEAVES[name].pre || 0,
+  d: LEAVES[name].d,
+  split: !!LEAVES[name].split,
 }));
 const T = (() => {
   const want = Q.get('tr');
   if (!want) return TRANSITIONS[0];
-  if (want === 'instant') return TRANSITIONS.find((t) => t.out === 'instant');
   const byIdx = parseInt(want, 10);
   if (Number.isFinite(byIdx) && TRANSITIONS[byIdx - 1]) return TRANSITIONS[byIdx - 1];
-  return TRANSITIONS.find((t) => t.name.includes(want)) || TRANSITIONS[0];
+  return TRANSITIONS.find((t) => t.name === want || t.name.includes(want)) || TRANSITIONS[0];
 })();
 
 /* the outro reveals as the text starts leaving (so the fade reads as a
@@ -255,48 +440,68 @@ function renderChat(t) {
 
 
 /* ---- the punch cards: hard cuts, pure black. The second card holds, then
-   DISSOLVES smoothly: its text fades out while the superbot mascot is
-   revealed beneath (the outro shows through the transparent card
-   background) — no scale, no pop (user ask: just a smooth transition). ---- */
-const CARD2_DISSOLVE = 0.6;
+   LEAVES by the selected mechanism (40 in LEAVES above) while the outro
+   shows through the transparent card background beneath it. ---- */
+
+let currentCard = null;
+
+function setCard(el, text, split) {
+  if (!split) { el.textContent = text; return; }
+  el.textContent = '';
+  for (const ch of text) {
+    const s = document.createElement('span');
+    s.className = 'ltr';
+    s.textContent = ch;
+    el.appendChild(s);
+  }
+}
+
+function cardNow(t, frac) {
+  if (!currentCard) return '';
+  if (frac == null) return currentCard;
+  return currentCard.slice(0, Math.max(0, Math.ceil(frac * currentCard.length)));
+}
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
   let card = null, since = -1, leaving = false;
-  const LEAVE_END = CARDS_END + (T.out === 'instant' ? 0 : (OUTS[T.out] || OUTS.fade).d);
+  const LEAVE = LEAVES[T.leave];
+  const LEAVE_END = CARDS_END + (T.leave === 'instant' ? 0 : LEAVE.d);
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
   } else if (t >= CARD2_AT && t < LEAVE_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
-    leaving = t >= CARDS_END && T.out !== 'instant';
+    leaving = t >= CARDS_END && T.leave !== 'instant';
   }
   if (card === null) {
     simple.style.opacity = '0';
+    currentCard = null;
     return;
   }
-  simple.textContent = card;
+  currentCard = card;
+  setCard(simple, card, T.split && leaving);
   if (leaving) {
-    // the text leaves per the variant: opacity + a small move/scale/blur,
-    // all riding one smoothed p — the outro shows through the transparent
-    // card background
-    const O = OUTS[T.out];
-    const p = easeInOutSine(inP(t - CARDS_END, O.d));
-    const pb = O.back ? easeOutBack(inP(t - CARDS_END, O.d)) : p;
-    let o;
-    if (O.hold) o = 1 - inP(p, 0.45);
-    else if (O.early) o = 1 - clamp(p / 0.4, 0, 1);
-    else o = 1 - p;
+    // reset every property a leave mechanism can own, then hand the card
+    // to it whole — the outro shows through the transparent card background
     simple.style.background = 'transparent';
-    simple.style.opacity = clamp(o, 0, 1).toFixed(3);
-    const dx = (O.dx || 0) * p, dy = (O.dy || 0) * p;
-    const s = 1 + (((O.s || 1) - 1) * (O.back ? pb : p));
-    simple.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${s.toFixed(4)})`;
-    simple.style.letterSpacing = O.ls ? `${(O.ls * p).toFixed(2)}px` : '';
-    simple.style.filter = O.blur ? `blur(${(O.blur * p).toFixed(2)}px)` : 'none';
+    simple.style.opacity = '1';
+    simple.style.transform = 'none';
+    simple.style.filter = 'none';
+    simple.style.letterSpacing = '';
+    simple.style.clipPath = '';
+    simple.style.textShadow = '';
+    simple.style.webkitTextStroke = '';
+    simple.style.color = '';
+    const p = easeInOutSine(inP(t - CARDS_END, LEAVE.d));
+    LEAVE.fn(simple, LEAVE.split ? Array.from(simple.children) : null, p, t);
     return;
   }
   simple.style.background = '';
   simple.style.letterSpacing = '';
+  simple.style.clipPath = '';
+  simple.style.textShadow = '';
+  simple.style.webkitTextStroke = '';
+  simple.style.color = '';
   simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
   simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
   simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
