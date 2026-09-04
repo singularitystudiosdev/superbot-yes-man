@@ -572,6 +572,15 @@ function render(t) {
 
 const urlT = new URLSearchParams(location.search).get('t');
 
+/* review window: when a transition is selected (?tr=…, as variants.html
+   always does), the show plays ONLY the part that is the transition — the
+   "AND YOU LIKE THAT?" card appearing, its leave, and the outro arriving
+   — looping that window alone. No chat scene, no first card, nothing after
+   the settle. The full spot still plays with no ?tr. */
+const PART_ONLY = !!Q.get('tr');
+const LOOP_AT = PART_ONLY ? CARD2_AT - 0.35 : 0;     // a beat of pure black, then the card pops
+const LOOP_END = PART_ONLY ? OUT_AT + 1.6 : CYCLE;   // hold the arrival briefly, then loop
+
 initChat();
 
 let t0 = performance.now();
@@ -586,8 +595,8 @@ if (urlT !== null) {
   });
 } else {
   function tick(now) {
-    let t = ((now - t0) / 1000) * SPEED;
-    if (t >= CYCLE) { t0 = now; t = 0; }
+    let t = LOOP_AT + ((now - t0) / 1000) * SPEED;
+    if (t >= LOOP_END) { t0 = now; t = LOOP_AT; }
     render(t);
     requestAnimationFrame(tick);
   }
