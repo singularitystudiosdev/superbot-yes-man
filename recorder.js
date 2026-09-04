@@ -17,6 +17,10 @@
   const hint = document.getElementById('hint');
   const chromeBits = [btn, hud, hint].filter(Boolean);
   if (document.body.classList.contains('freeze')) btn.style.display = 'none';
+  // embedded (variants.html tiles): never show the page chrome
+  if (new URLSearchParams(location.search).has('embed')) {
+    chromeBits.forEach((el) => { el.style.display = 'none'; });
+  }
 
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
