@@ -60,7 +60,7 @@ const CARD2_AT = CARD1_END, CARD2_LEN = 2.0;         // AND YOU LIKE THAT? (hold
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
 /* ---- scene 3: the /superbot take (a fresh conversation) ---- */
-const SB_TYPE_AT = CARDS_END + 0.15, SB_TYPE_DUR = 1.3;   // no blackout after the card
+const SB_TYPE_AT = CARDS_END + 0.02, SB_TYPE_DUR = 1.3;   // no blackout after the card
 const SB_PRESS = SB_TYPE_AT + SB_TYPE_DUR + 0.45;
 const SB_MSG_AT = SB_PRESS + 0.1;
 const SB_THINK_AT = SB_MSG_AT + 0.15, SB_THINK_LEN = 0.5;
@@ -92,31 +92,45 @@ const AUDIT_LINES = [
 const AUDIT_AT = SCRAPE_END + 0.05, AUDIT_STEP = 0.35;
 const AUDIT_END = AUDIT_AT + AUDIT_LINES.length * AUDIT_STEP;
 
-/* ---- scene 5: the verdict — "No.", then the fragments punch in turn ---- */
+/* ---- scene 5: the verdict — "No." punches alone, then the defect list:
+   everything wrong with the site, one actionable fix per item (every fix
+   names a SPECIFIC thing on the real carbkiller.com — checked against the
+   live page, 2026-09-03). One item embeds a REAL screenshot of the
+   "CARB BLOCKER" video section (assets/section-video.png, captured from
+   the live site) with the AI-slop verdict. ---- */
 const NO_AT = AUDIT_END + 0.2, NO_DUR = 0.3;
-const VERDICT_SEGS = [
-  { t: 'No.', cls: 'sb-no' },
-  { t: ' Your business ' },
-  { t: 'lacks novelty', frag: 0 },
-  { t: ', has ' },
-  { t: 'no monetization', frag: 1 },
-  { t: ', and is ' },
-  { t: 'burning $50 a month', frag: 2 },
-  { t: ' to hold the domain.' },
-];
 /* the single punch (the "Black." machinery): a beat after "No." lands the
    camera pushes ALL the way in — black frame, white "No.", nothing else
-   visible — holds, and relaxes clean. The rest of the verdict streams only
-   after the zoom-out has settled. */
+   visible — holds, and relaxes clean. The list only starts once the
+   zoom-out has settled. */
 const PUNCH_IN = 0.25, PUNCH_HOLD = num('hold', 1.2), PUNCH_OUT = 0.6, EMPH_MAX = num('emph', 7);
 const PUNCH_AT = NO_AT + NO_DUR + 0.55;
 const PUNCH_LEN = PUNCH_IN + PUNCH_HOLD + PUNCH_OUT;
 const PUNCH_END = PUNCH_AT + PUNCH_LEN;
-const REST_AT = PUNCH_END + 0.15, REST_DUR = 1.3;
-const VERDICT_CHARS = VERDICT_SEGS.reduce((n, s) => n + s.t.length, 0) - 3; // minus "No."
+const DEFECTS = [
+  {
+    p: 'The cookie banner covers your buy button.',
+    f: 'Dismiss it for first-time visitors — your $34.95 "Add to Cart" is hidden behind "We value your privacy" right now.',
+  },
+  {
+    p: 'The overall design appears like AI slop.',
+    shot: true,
+    f: 'Keep the two badges that actually sell (Keto, 3rd-Party Lab Tested) and reshoot the hand-written "CARB BLOCKER" clip — seven clip-art badges read 2012.',
+  },
+  {
+    p: 'The first screen asks for nothing.',
+    f: 'Cut the hero to one line — "Less hunger, more weight loss." — and make "Add to Cart" the only button above the fold.',
+  },
+  {
+    p: 'There is no way in but the cart.',
+    f: 'Add a 10%-off email capture and a one-page checkout — paid traffic needs a list to retarget or every campaign leaks.',
+  },
+];
+const LIST_AT = PUNCH_END + 0.2, LIST_STEP = 1.25;
+const LIST_END = LIST_AT + DEFECTS.length * LIST_STEP;
 
 /* ---- scene 6: the recommendation + the three attached campaigns ---- */
-const REC_AT = PUNCH_END + 0.3, REC_DUR = 1.5;
+const REC_AT = LIST_END + 0.5, REC_DUR = 1.5;
 const REC = 'I recommend you aggressively take market share from a competing company — attack ads, framed properly: public side-by-side comparisons, their numbers next to yours.';
 const CAMP_LINE_AT = REC_AT + REC_DUR + 0.25, CAMP_LINE_DUR = 0.6;
 const CAMP_LINE = 'Attaching 3 campaigns.';
@@ -302,21 +316,22 @@ function renderChat(t) {
         msgAi.innerHTML = `<span class="scrape">${lines.join('')}</span>`;
         msgArea.scrollTop = 1e6;                        // follow the descent
       } else {
-        // the verdict: "No." first, then the rest streams with the punch
-        // fragments wrapped in data-frag spans
+        // the verdict: "No." alone, then the defect list — one actionable
+        // fix per item; item 02 embeds the real site screenshot
         const no = 'No.'.slice(0, Math.ceil(inP(t - NO_AT, NO_DUR) * 3));
-        const streamP = t < REST_AT ? 0 : inP(t - REST_AT, REST_DUR);
-        const budget = Math.ceil(streamedChars(streamP));
-        let used = 0;
-        const html = VERDICT_SEGS.map((s) => {
-          // "No." streams on its own beat and doesn't spend the budget
-          if (s.cls === 'sb-no') return `<span class="sb-no">${esc(no)}</span>`;
-          const take = esc(s.t.slice(0, Math.max(0, Math.min(s.t.length, budget - used))));
-          used += s.t.length;
-          return s.frag !== undefined
-            ? `<span class="sb-frag" data-frag="${s.frag}">${take}</span>`
-            : take;
-        }).join('');
+        let html = `<span class="sb-no">${esc(no)}</span>`;
+        if (t >= LIST_AT) {
+          const k = Math.min(DEFECTS.length, Math.floor((t - LIST_AT) / LIST_STEP) + 1);
+          html += `<span class="defects">` + DEFECTS.slice(0, k).map((d, i) => {
+            const ip = inP(t - (LIST_AT + i * LIST_STEP), 0.3);
+            const shot = d.shot
+              ? `<div class="li-shot"><img src="assets/section-video.png" alt="carbkiller.com · the CARB BLOCKER video section" onload="document.getElementById('msgArea').scrollTop=1e6"></div>`
+              : '';
+            return `<div class="li" style="opacity:${ip.toFixed(2)};transform:translateY(${(7 * (1 - ip)).toFixed(1)}px)">` +
+              `<div class="li-p">${i + 1}. ${esc(d.p)}</div>${shot}` +
+              `<div class="li-f">→ ${esc(d.f)}</div></div>`;
+          }).join('') + `</span>`;
+        }
         msgAi.innerHTML = html;
         // the recommendation + the three attached campaigns + the cursor
         if (t >= REC_AT) {
@@ -328,8 +343,7 @@ function renderChat(t) {
           msgAi.innerHTML += `<span class="camp-note">${esc(cl)}</span>`;
           const cards = CAMP_TITLE.map((title, i) => {
             const at = CAMP1_AT + i * CAMP_STEP;
-            if (t < at) return '';
-            const cp = inP(t - at, 0.22);
+            const cp = t < at ? 0 : inP(t - at, 0.22);   // shells reserved, pop by opacity
             const hovered = i === 2 && t >= CURSOR_AT + CURSOR_DUR;
             return `<div class="camp${hovered ? ' hover' : ''}" data-camp="${i}" style="opacity:${cp.toFixed(2)};transform:translateY(${(8 * (1 - cp)).toFixed(1)}px)">` +
               `<div class="camp-bar"><b>${title.split(' · ')[0]}</b> · ${title.split(' · ')[1]}</div>` +
@@ -421,11 +435,6 @@ function renderChat(t) {
     cursor.style.opacity = '0';
   }
 }
-
-/* the verdict streams in CHAR order across the segments; "No." lands first
-   (its own NO_AT beat), the rest streams from REST_AT — the budget counts
-   the chars after "No." */
-const streamedChars = (p) => Math.ceil(p * VERDICT_CHARS);
 
 /* ---- the punch cards ---- */
 

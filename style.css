@@ -198,10 +198,37 @@ body {
 .scrape .ok { color: var(--accent); }
 .scrape .blocked { color: var(--danger); }
 .scrape .ms { color: #6f6f75; }
-/* the verdict block: the punch targets are spans inside it */
+/* the verdict block: the punch target is the .sb-no span */
 .sb-no { font-weight: 700; color: #fff; }
 .sb-rest, .sb-frag { color: #ececf1; }
 .sb-pivot { display: block; padding-top: 10px; }
+/* the defect list: each item = the problem + one actionable fix. Item 02
+   embeds the real screenshot of the site's video section. */
+.defects { display: block; padding-top: 8px; }
+.defects .li {
+  display: block;
+  padding: 7px 0 2px;
+  border-top: 1px solid #1e1e22;
+  will-change: opacity, transform;
+}
+.defects .li:first-child { border-top: none; }
+.defects .li-p {
+  color: #f0f0f3;
+  font: 600 clamp(13px, 1.18vw, 15.5px)/1.45 var(--font-ui);
+  letter-spacing: -0.005em;
+}
+.defects .li-f {
+  color: #8f8f95;
+  font: clamp(11.5px, 1.02vw, 13.5px)/1.55 var(--font-mono);
+  padding-top: 3px;
+}
+.defects .li-shot {
+  margin: 8px 0 2px;
+  border: 1px solid #2e2e33; border-radius: 10px;
+  overflow: hidden;
+  max-width: 78%;
+}
+.defects .li-shot img { display: block; width: 100%; }
 /* the attached ad campaigns: three cards, each playing a real clip of the
    family's own spots, looping */
 .camp-note { display: block; padding-top: 10px; color: #8f8f95; font: clamp(11px, 1vw, 13.5px)/1.7 var(--font-mono); }
