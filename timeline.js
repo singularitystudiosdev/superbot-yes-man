@@ -50,18 +50,71 @@ const WALL_AT = GLAZE_AT + GLAZE_LEN * 0.55;
 /* ---- scene 2.5: the punch cards (hard cuts, no dead air between them) ---- */
 const CARD1_AT = GLAZE_END + 0.08, CARD1_LEN = 2.1;  // LLMs are made to agree with you
 const CARD1_END = CARD1_AT + CARD1_LEN;
-const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then dissolves into the outro)
+const CARD2_AT = CARD1_END, CARD2_LEN = 1.15;        // AND YOU LIKE THAT? (1.15s, then the transition)
 const CARDS_END = CARD2_AT + CARD2_LEN;
 
-/* ---- scene 3: the superbot.gg end card, straight from the card ---- */
-const END_AT = CARDS_END;
+/* ---- the card→outro transition: 40 simple, smooth variants (user ask —
+   nothing artsy). Pick one with ?tr=NAME; variants.html compares them all.
+   Each variant = how the text leaves (OUTS) × how the mascot arrives
+   (mas) × an optional pure-black beat between the two (pre). ---- */
+const OUTS = {
+  fade:         { d: 0.6 },
+  'fade-slow':  { d: 1.0 },
+  'fade-fast':  { d: 0.3 },
+  'fade-up':    { d: 0.6, dy: -16 },
+  'fade-down':  { d: 0.6, dy: 16 },
+  'fade-left':  { d: 0.6, dx: -20 },
+  'fade-right': { d: 0.6, dx: 20 },
+  'fade-up-back': { d: 0.7, dy: -12 },
+  'blur-out':   { d: 0.6, blur: 8 },
+  'blur-soft':  { d: 0.9, blur: 4 },
+  'scale-down': { d: 0.6, s: 0.94 },
+  'scale-up':   { d: 0.6, s: 1.06 },
+  'tracking-out': { d: 0.7, ls: 6 },
+  'tracking-in':  { d: 0.7, ls: -2 },
+  'lift-blur':  { d: 0.7, dy: -12, blur: 6 },
+  'drop-blur':  { d: 0.7, dy: 12, blur: 6 },
+  'fade-hold':  { d: 0.6, hold: true },   // text stays sharp, then leaves fast
+  'fade-early': { d: 0.6, early: true },  // text leaves in the first 40%
+  'back-out':   { d: 0.6, s: 1.05, back: true },
+  'breathe':    { d: 0.7, s: 0.97, sine: true },
+};
+const TRANSITIONS = [
+  ['fade', 'plain'], ['fade-slow', 'plain'], ['fade-fast', 'plain'], ['fade-up', 'plain'],
+  ['fade-down', 'plain'], ['fade-left', 'plain'], ['fade-right', 'plain'], ['fade-up-back', 'plain'],
+  ['blur-out', 'plain'], ['blur-soft', 'plain'], ['scale-down', 'plain'], ['scale-up', 'plain'],
+  ['tracking-out', 'plain'], ['tracking-in', 'plain'], ['lift-blur', 'plain'], ['drop-blur', 'plain'],
+  ['fade-hold', 'plain'], ['fade-early', 'plain'], ['back-out', 'plain'], ['breathe', 'plain'],
+  ['fade', 'pop'], ['fade-up', 'pop'], ['blur-out', 'pop'], ['scale-down', 'pop'],
+  ['fade-fast', 'pop'], ['fade', 'rise'], ['fade-up', 'rise'], ['fade', 'zoom'],
+  ['scale-down', 'zoom'], ['fade', 'wordfirst'], ['fade-up', 'wordfirst'], ['fade', 'nodrift'],
+  ['fade-up', 'nodrift'], ['blur-out', 'nodrift'], ['fade-hold', 'pop'], ['fade', 'plain', 0.25],
+  ['instant', 'plain'], ['fade-hold', 'nodrift'], ['blur-soft', 'pop'], ['breathe', 'nodrift'],
+].map(([out, mas, pre], i) => ({
+  name: out === 'instant' ? 'instant' : `v${String(i + 1).padStart(2, '0')}-${out}-${mas}${pre ? `-beat` : ''}`,
+  out, mas, pre: pre || 0,
+}));
+const T = (() => {
+  const want = Q.get('tr');
+  if (!want) return TRANSITIONS[0];
+  if (want === 'instant') return TRANSITIONS.find((t) => t.out === 'instant');
+  const byIdx = parseInt(want, 10);
+  if (Number.isFinite(byIdx) && TRANSITIONS[byIdx - 1]) return TRANSITIONS[byIdx - 1];
+  return TRANSITIONS.find((t) => t.name.includes(want)) || TRANSITIONS[0];
+})();
+
+/* the outro reveals as the text starts leaving (so the fade reads as a
+   crossfade into the mascot); the beat variants hold pure black first */
+const OUT_AT = CARDS_END + T.pre;
+
+/* ---- scene 3: the superbot.gg end card, after the transition ---- */
 const DRIFT_AT = 0.7;
 const SETTLE = DRIFT_AT + 1.0;
 const LAUGH_PERIOD = 2.4;
 const LAUGH_DUR = 0.9;
 const LOGO_GAP = 24;
 const END_LEN = 4.8;
-const CYCLE = END_AT + END_LEN + 1.8;
+const CYCLE = OUT_AT + END_LEN + 1.8;
 
 const Q1 = 'Does my website look good?';
 const SITE = 'carbkiller.com';
@@ -88,6 +141,7 @@ function renderChrome(t) {
 let inited = false;
 let endBot = null;
 let endLaugh = false;
+let endPop = false;
 
 function initChat() {
   if (inited) return;
@@ -208,63 +262,88 @@ const CARD2_DISSOLVE = 0.6;
 
 function renderCards(t) {
   const simple = document.getElementById('simple');
-  let card = null, since = -1, dissolving = false;
+  let card = null, since = -1, leaving = false;
+  const LEAVE_END = CARDS_END + (T.out === 'instant' ? 0 : (OUTS[T.out] || OUTS.fade).d);
   if (t >= CARD1_AT && t < CARD1_END) {
     card = 'LLMs are made to agree with you'; since = t - CARD1_AT;
-  } else if (t >= CARD2_AT && t < CARDS_END + CARD2_DISSOLVE) {
+  } else if (t >= CARD2_AT && t < LEAVE_END) {
     card = 'AND YOU LIKE THAT?'; since = t - CARD2_AT;
-    dissolving = t >= CARDS_END;
+    leaving = t >= CARDS_END && T.out !== 'instant';
   }
   if (card === null) {
     simple.style.opacity = '0';
     return;
   }
   simple.textContent = card;
-  if (dissolving) {
-    simple.style.background = 'transparent';   // the outro shows through
-    simple.style.opacity = (1 - easeInOutSine(inP(t - CARDS_END, CARD2_DISSOLVE))).toFixed(3);
-    simple.style.transform = 'none';
-    simple.style.filter = 'none';
+  if (leaving) {
+    // the text leaves per the variant: opacity + a small move/scale/blur,
+    // all riding one smoothed p — the outro shows through the transparent
+    // card background
+    const O = OUTS[T.out];
+    const p = easeInOutSine(inP(t - CARDS_END, O.d));
+    const pb = O.back ? easeOutBack(inP(t - CARDS_END, O.d)) : p;
+    let o;
+    if (O.hold) o = 1 - inP(p, 0.45);
+    else if (O.early) o = 1 - clamp(p / 0.4, 0, 1);
+    else o = 1 - p;
+    simple.style.background = 'transparent';
+    simple.style.opacity = clamp(o, 0, 1).toFixed(3);
+    const dx = (O.dx || 0) * p, dy = (O.dy || 0) * p;
+    const s = 1 + (((O.s || 1) - 1) * (O.back ? pb : p));
+    simple.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${s.toFixed(4)})`;
+    simple.style.letterSpacing = O.ls ? `${(O.ls * p).toFixed(2)}px` : '';
+    simple.style.filter = O.blur ? `blur(${(O.blur * p).toFixed(2)}px)` : 'none';
     return;
   }
   simple.style.background = '';
+  simple.style.letterSpacing = '';
   simple.style.opacity = easeOutQuint(clamp(since / 0.35, 0, 1)).toFixed(3);
   simple.style.transform = `scale(${(0.94 + 0.06 * easeOutBack(inP(since, 0.45))).toFixed(3)})`;
   simple.style.filter = since < 0.35 ? `blur(${(4 * (1 - inP(since, 0.35))).toFixed(2)}px)` : 'none';
 }
 
-/* ---- the end card (same as the previous animation) ---- */
+/* ---- the end card: reveals at OUT_AT (after the text leaves + the beat) ---- */
 
 function renderEndcard(t) {
   const overlay = document.getElementById('endcard');
   const bot = document.getElementById('endBot');
   const word = document.getElementById('endWord');
-  if (t < END_AT || t >= CYCLE) {
+  if (t < OUT_AT || t >= CYCLE) {
     overlay.style.display = 'none';
     endLaugh = false;
+    endPop = false;
     return;
   }
   overlay.style.display = '';
-  const s = t - END_AT;
-  overlay.style.opacity = '1';   // INSTANT cut from the card: pure black, no fade
+  const s = t - OUT_AT;
+  overlay.style.opacity = '1';   // instant reveal on pure black
 
   const stage = overlay.getBoundingClientRect();
-  const shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
+  let shift = easeOutQuint(clamp((s - DRIFT_AT) / 1.0, 0, 1));
+  if (T.mas === 'nodrift') shift = 1;
   const w = bot.offsetWidth, h = bot.offsetHeight;
-  const scale = 1.22;
+  let scale = 1.22;
+  if (T.mas === 'zoom') scale = 1.22 + 0.08 * (1 - clamp(s / 0.7, 0, 1));
+  const rise = T.mas === 'rise' ? (1 - clamp(s / 0.6, 0, 1)) * 14 : 0;
   const wordW = word.offsetWidth;
   const total = w * scale + LOGO_GAP + wordW;
   const left = (stage.width - total) / 2;
   const midY = stage.height / 2;
   const logoX = stage.width / 2 + (left + (w * scale) / 2 - stage.width / 2) * shift;
   bot.style.transform =
-    `translate(${(logoX - w / 2).toFixed(1)}px, ${(midY - h / 2).toFixed(1)}px) scale(${scale.toFixed(3)})`;
-  word.style.opacity = shift.toFixed(3);
-  word.style.filter = shift < 1 ? `blur(${(6 * (1 - shift)).toFixed(1)}px)` : 'none';
+    `translate(${(logoX - w / 2).toFixed(1)}px, ${(midY - h / 2 + rise).toFixed(1)}px) scale(${scale.toFixed(3)})`;
+  const wordO = T.mas === 'wordfirst' ? clamp((s - 0.2) / 0.5, 0, 1) : shift;
+  word.style.opacity = wordO.toFixed(3);
+  word.style.filter = wordO < 1 ? `blur(${(6 * (1 - wordO)).toFixed(1)}px)` : 'none';
   word.style.transform =
     `translate(${(left + w * scale + LOGO_GAP + 20 * (1 - shift)).toFixed(1)}px, -50%)`;
 
   if (endBot) {
+    // the mascot pops as the text finishes leaving (variants marked pop)
+    if (T.mas === 'pop' && !endPop) {
+      endBot.excitedUntil = performance.now() + 600;
+      endPop = true;
+    }
     const laughing = s >= SETTLE && ((s - SETTLE) % LAUGH_PERIOD) < LAUGH_DUR;
     Object.assign(endBot.expr, laughing
       ? { eyeL: 'happy', eyeR: 'happy', mouth: 'grin' }
